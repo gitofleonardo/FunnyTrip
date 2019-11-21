@@ -1,9 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.home.NoteActivity">
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    tools:context=".activity.home.NoteActivity"
+    android:orientation="vertical">
+    <androidx.appcompat.widget.Toolbar
+        android:background="@color/white"
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/toolbar_height">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <ImageView
+                android:layout_gravity="center|left"
+                android:id="@+id/back"
+                android:src="@drawable/back"
+                android:layout_width="@dimen/toolbar_back_size"
+                android:layout_height="@dimen/toolbar_back_size"/>
+            <TextView
+                android:text="@string/write_note"
+                android:layout_gravity="center"
+                android:textAllCaps="false"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+            <TextView
+                android:id="@+id/save"
+                android:layout_marginRight="20dp"
+                android:gravity="center"
+                android:text="@string/save"
+                android:layout_gravity="center|right"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"/>
+        </FrameLayout>
+    </androidx.appcompat.widget.Toolbar>
+    <androidx.cardview.widget.CardView
+        app:cardCornerRadius="10dp"
+        android:layout_margin="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <EditText
+            android:gravity="center"
+            android:background="@color/note_yellow"
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"/>
+    </androidx.cardview.widget.CardView>
+    <TextView
+        android:textColor="@color/black"
+        android:textAllCaps="false"
+        android:layout_margin="20dp"
+        android:gravity="right"
+        android:text="0/180"
+        android:id="@+id/tip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:src="@drawable/delete"
+            android:layout_margin="20dp"
+            android:layout_gravity="right|bottom"
+            app:backgroundTint="@color/ThemeBlue"
+            android:id="@+id/delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </FrameLayout>
+</LinearLayout>

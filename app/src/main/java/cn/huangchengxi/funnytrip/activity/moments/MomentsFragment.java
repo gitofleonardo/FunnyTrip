@@ -13,7 +13,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import cn.huangchengxi.funnytrip.R;
+import cn.huangchengxi.funnytrip.adapter.MomentRVAdapter;
+import cn.huangchengxi.funnytrip.item.MomentItem;
 
 public class MomentsFragment extends Fragment {
     public static final int CONTENT_ALL=0;
@@ -24,6 +30,9 @@ public class MomentsFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private SwipeRefreshLayout srl;
+    private List<MomentItem> list;
+    private MomentRVAdapter adapter;
+    private String userId;
 
     public MomentsFragment() {
         // Required empty public constructor
@@ -33,6 +42,12 @@ public class MomentsFragment extends Fragment {
     public static MomentsFragment newInstance(int content) {
         MomentsFragment fragment = new MomentsFragment();
         fragment.content=content;
+        return fragment;
+    }
+    // TODO: Rename and change types and number of parameters
+    public static MomentsFragment newInstance(String userId) {
+        MomentsFragment fragment = new MomentsFragment();
+        fragment.userId=userId;
         return fragment;
     }
 
@@ -48,7 +63,22 @@ public class MomentsFragment extends Fragment {
         View view=inflater.inflate(R.layout.fragment_moments, container, false);
         recyclerView=view.findViewById(R.id.moment_rv);
         srl=view.findViewById(R.id.srl);
+        srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                //do refresh
+                if (srl.isRefreshing()){
+                    srl.setRefreshing(false);
+                }
+            }
+        });
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        list=new ArrayList<>();
+        for (int i=0;i<10;i++){
+            list.add(new MomentItem("0","0","黄承喜",new Date().getTime(),"你好呀",null));
+        }
+        adapter=new MomentRVAdapter(list);
+        recyclerView.setAdapter(adapter);
         return view;
     }
 

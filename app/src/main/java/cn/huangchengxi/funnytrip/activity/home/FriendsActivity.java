@@ -14,7 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
-import cn.huangchengxi.funnytrip.activity.friend.AddFriendActivity;
+import cn.huangchengxi.funnytrip.activity.friend.SearchFriendActivity;
+import cn.huangchengxi.funnytrip.activity.friend.FriendDetailActivity;
 import cn.huangchengxi.funnytrip.adapter.FriendRVAdapter;
 import cn.huangchengxi.funnytrip.item.FriendItem;
 
@@ -64,6 +65,12 @@ public class FriendsActivity extends AppCompatActivity {
         tmp.add(new FriendItem("0","0张磊"));
 
         adapter.addAll(tmp);
+        adapter.setOnUserClick(new FriendRVAdapter.OnUserClick() {
+            @Override
+            public void onClick(View view, FriendItem item) {
+                FriendDetailActivity.startDetailActivity(FriendsActivity.this,item.getUserID());
+            }
+        });
 
         srl=findViewById(R.id.srl);
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -78,7 +85,7 @@ public class FriendsActivity extends AppCompatActivity {
         addFrind.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(FriendsActivity.this, AddFriendActivity.class));
+                startActivity(new Intent(FriendsActivity.this, SearchFriendActivity.class));
             }
         });
     }

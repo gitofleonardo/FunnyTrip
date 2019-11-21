@@ -10,4 +10,6 @@
     <color name="transparent">#00FFFFFF</color>
     <color name="white80">#CCFFFFFF</color>
     <color name="random">#673AB7</color>
+    <color name="note_yellow">#FFC107</color>
+    <color name="green">#8BC34A</color>
 </resources>

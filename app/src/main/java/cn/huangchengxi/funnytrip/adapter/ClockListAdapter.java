@@ -1,5 +1,6 @@
 package cn.huangchengxi.funnytrip.adapter;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import cn.huangchengxi.funnytrip.item.ClockItem;
 import cn.huangchengxi.funnytrip.viewholder.ClockListHolder;
 
 public class ClockListAdapter extends RecyclerView.Adapter<ClockListHolder> {
+    private int[] colors={Color.rgb(255,87,34),Color.rgb(0,188,212),Color.rgb(255,235,59),Color.rgb(76,175,80),Color.rgb(103,58,183),Color.rgb(3,169,244)};
     private List<ClockItem> list;
     public ClockListAdapter() {
         list=new ArrayList<>();
@@ -32,6 +34,8 @@ public class ClockListAdapter extends RecyclerView.Adapter<ClockListHolder> {
         ClockItem item=list.get(position);
         holder.location.setText(item.getLocation());
         holder.time.setText(item.getFormattedTime());
+        int colorIndex=(int)(Math.random()*(colors.length-1));
+        holder.leftDecorator.setBackgroundColor(colors[colorIndex]);
     }
 
     @Override
@@ -40,6 +44,10 @@ public class ClockListAdapter extends RecyclerView.Adapter<ClockListHolder> {
     }
     public void add(ClockItem item){
         list.add(item);
+        notifyDataSetChanged();
+    }
+    public void clear(){
+        list.clear();
         notifyDataSetChanged();
     }
 }

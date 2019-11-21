@@ -17,6 +17,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,6 +36,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
@@ -43,6 +45,7 @@ import cn.huangchengxi.funnytrip.activity.navigation.AccountInfoActivity;
 import cn.huangchengxi.funnytrip.activity.navigation.AccountSecurityActivity;
 import cn.huangchengxi.funnytrip.activity.navigation.ContactActivity;
 import cn.huangchengxi.funnytrip.activity.navigation.SettingActivity;
+import cn.huangchengxi.funnytrip.activity.note.MyNoteActivity;
 import cn.huangchengxi.funnytrip.adapter.ClockListAdapter;
 import cn.huangchengxi.funnytrip.adapter.NoteAdapter;
 import cn.huangchengxi.funnytrip.item.ClockItem;
@@ -74,6 +77,7 @@ public class MainActivity extends BaseAppCompatActivity {
     private ImageView refreshImg;
     private HomeAppView friendsView;
     private HomeAppView momentsView;
+    private HomeAppView routeView;
     private FrameLayout weather;
     private ImageView weather_img;
     private TextView weather_des;
@@ -84,6 +88,8 @@ public class MainActivity extends BaseAppCompatActivity {
     private String district;
     private String weatherID;
     private String weatherDes;
+    private FrameLayout noteWrite;
+    private CardView myNote;
 
     private final int WEATHER_OK=0;
     private final int WEATHER_FAIL=1;
@@ -91,6 +97,7 @@ public class MainActivity extends BaseAppCompatActivity {
     //request code
     private final int CLOCK_RC=0;
     private final int WEATHER_RC=1;
+    private final int NOTE_RC=2;
 
     private MyHandler myHandler=new MyHandler();
 
@@ -104,8 +111,8 @@ public class MainActivity extends BaseAppCompatActivity {
     private void init(){
         clockListView=findViewById(R.id.clock_list);
         clockListAdapter=new ClockListAdapter();
-        for (int i=0;i<5;i++){
-            clockListAdapter.add(new ClockItem("97184","湖南省长沙市",new Date().getTime()));
+        for (int i=0;i<ApplicationSetting.clocks.size();i++){
+            clockListAdapter.add(ApplicationSetting.clocks.get(i));
         }
         clockListView.setAdapter(clockListAdapter);
         clockListView.setLayoutManager(new LinearLayoutManager(this));
@@ -145,9 +152,29 @@ public class MainActivity extends BaseAppCompatActivity {
 
         noteRv=findViewById(R.id.home_note_rv);
         noteAdapter=new NoteAdapter();
-        for (int i=0;i<3;i++){
-            noteAdapter.add(new NoteItem(new Date().getTime(),"今天没有睡过头","1"));
+        for (int i=0;i<ApplicationSetting.notes.size();i++){
+            noteAdapter.add(ApplicationSetting.notes.get(i));
         }
+        noteAdapter.setOnNoteClickListener(new NoteAdapter.OnNoteClickListener() {
+            @Override
+            public void onClick(View view, NoteItem item) {
+                NoteActivity.startNoteActivityForResult(MainActivity.this,NOTE_RC,item);
+            }
+        });
+        noteWrite=findViewById(R.id.write_note);
+        noteWrite.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                NoteActivity.startNoteActivityForResult(MainActivity.this,NOTE_RC,null);
+            }
+        });
+        myNote=findViewById(R.id.no_note_to_show);
+        myNote.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(new Intent(MainActivity.this, MyNoteActivity.class),NOTE_RC);
+            }
+        });
         noteRv.setAdapter(noteAdapter);
         noteRv.setLayoutManager(new LinearLayoutManager(this));
 
@@ -215,6 +242,13 @@ public class MainActivity extends BaseAppCompatActivity {
                     Intent intent=new Intent(MainActivity.this,WeatherPicker.class);
                     startActivityForResult(intent,WEATHER_RC);
                 }
+            }
+        });
+        routeView=findViewById(R.id.home_app_route);
+        routeView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,RouteActivity.class));
             }
         });
 
@@ -312,6 +346,46 @@ public class MainActivity extends BaseAppCompatActivity {
                     updateWeather(weatherID);
                 }
                 break;
+            case NOTE_RC:
+                updateNoteList();
+                break;
+            case CLOCK_RC:
+                updateClockList();
+                break;
+        }
+    }
+    private void updateClockList(){
+        SqliteHelper helper=new SqliteHelper(this,"clocks",null,1);
+        SQLiteDatabase db=helper.getWritableDatabase();
+        Cursor cursor=db.query("clocks",null,null,null,null,null,null);
+        ApplicationSetting.clocks.clear();
+        clockListAdapter.clear();
+        if (cursor.moveToFirst()){
+            int i=0;
+            do{
+                long time=cursor.getLong(cursor.getColumnIndex("clock_time"));
+                String location=cursor.getString(cursor.getColumnIndex("location"));
+                ClockItem item=new ClockItem(String.valueOf(time),location,time);
+                ApplicationSetting.clocks.add(item);
+                clockListAdapter.add(item);
+            }while(cursor.moveToNext() && ++i<ApplicationSetting.MAX_CLOCK_COUNT);
+        }
+    }
+    private void updateNoteList(){
+        SqliteHelper helper=new SqliteHelper(this,"notes",null,1);
+        SQLiteDatabase db=helper.getWritableDatabase();
+        Cursor cursor=db.query("notes",null,null,null,null,null,null);
+        ApplicationSetting.notes.clear();
+        noteAdapter.clear();
+        if (cursor.moveToFirst()){
+            int i=0;
+            do{
+                long time=cursor.getLong(cursor.getColumnIndex("note_time"));
+                String content=cursor.getString(cursor.getColumnIndex("content"));
+                NoteItem item=new NoteItem(time,content);
+                ApplicationSetting.notes.add(item);
+                noteAdapter.add(item);
+            }while(cursor.moveToNext() && ++i<ApplicationSetting.MAX_NOTE_COUNT);
         }
     }
     private void updateWeather(final String weatherID){

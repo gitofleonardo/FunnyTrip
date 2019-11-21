@@ -6,10 +6,9 @@ import java.util.Date;
 public class NoteItem {
     private long time;
     private String content;
-    private String noteId;
-    public NoteItem(long time,String content,String noteId){
+
+    public NoteItem(long time,String content){
         this.content=content;
-        this.noteId=noteId;
         this.time=time;
     }
 
@@ -21,9 +20,6 @@ public class NoteItem {
         return time;
     }
 
-    public String getNoteId() {
-        return noteId;
-    }
     public String getFormattedTime(){
         SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
         return sdf.format(new Date(time));

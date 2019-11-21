@@ -23,7 +23,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".activity.friend.AddFriendActivity"></activity>
+        <activity android:name=".activity.route.AddRouteActivity"></activity>
+        <activity android:name=".activity.friend.AddFriendActivity" />
+        <activity android:name=".activity.friend.ChattingActivity" />
+        <activity android:name=".activity.friend.UserMomentActivity" />
+        <activity android:name=".activity.friend.FriendDetailActivity" />
+        <activity android:name=".activity.note.MyNoteActivity" />
+        <activity android:name=".activity.friend.SearchFriendActivity" />
         <activity android:name=".activity.home.WeatherPicker" />
         <activity android:name=".activity.navigation.AccountInfoActivity" />
         <activity android:name=".activity.home.NewsActivity" />

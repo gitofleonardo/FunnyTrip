@@ -14,7 +14,15 @@ public class SqliteHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         String weatherTable="create table weather(id varchar(50) unique)";
+        String noteTable="create table notes(note_time long unique,content varchar(200))";
+        String clockTable="create table clocks(clock_time long unique,location varchar(200),latitude double,longitude double)";
+        String routeTable="create table routes(name varchar(20),route_time long)";
+        String positionTable="create table positions(name varchar(100),latitude double,longitude double,route long,pos_index int)";
+        db.execSQL(positionTable);
+        db.execSQL(routeTable);
+        db.execSQL(clockTable);
         db.execSQL(weatherTable);
+        db.execSQL(noteTable);
     }
 
     @Override

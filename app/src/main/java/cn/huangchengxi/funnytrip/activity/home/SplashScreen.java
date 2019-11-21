@@ -8,9 +8,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.ContactsContract;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -21,12 +23,14 @@ import java.util.TimerTask;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
+import cn.huangchengxi.funnytrip.item.ClockItem;
+import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.utils.PermissionHelper;
 import cn.huangchengxi.funnytrip.utils.setting.ApplicationSetting;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 
 public class SplashScreen extends BaseAppCompatActivity {
-    private Button wSkipButton;
+    private FrameLayout wSkipButton;
     private ImageView wSplashImg;
     private Timer waitForSkip;
     private final int thisRQ=0;
@@ -43,6 +47,8 @@ public class SplashScreen extends BaseAppCompatActivity {
         setStatusBarColor(this,R.color.ThemeBlue);
         initWidget();
         readSetting();
+        readNotes();
+        readClocks();
         requestPermission();
     }
     private void initWidget(){
@@ -67,7 +73,7 @@ public class SplashScreen extends BaseAppCompatActivity {
         if (PermissionHelper.checkNeededPermissions(this)){
             waitForSkip=new Timer();
             myTimerTask=new MyTimerTask();
-            waitForSkip.schedule(myTimerTask,1000);
+            waitForSkip.schedule(myTimerTask,100);
         }else{
             PermissionHelper.requestNeededPermissions(this,thisRQ);
         }
@@ -83,7 +89,7 @@ public class SplashScreen extends BaseAppCompatActivity {
                 waitForSkip.cancel();
             }
             myTimerTask=new MyTimerTask();
-            waitForSkip.schedule(myTimerTask,1000);
+            waitForSkip.schedule(myTimerTask,100);
         }
     }
     private class MyHandler extends Handler{
@@ -116,5 +122,34 @@ public class SplashScreen extends BaseAppCompatActivity {
             ApplicationSetting.WEATHER_ID=cursor.getString(cursor.getColumnIndex("id"));
         }
         return true;
+    }
+    private void readNotes(){
+        SqliteHelper helper=new SqliteHelper(this,"notes",null,1);
+        SQLiteDatabase db=helper.getWritableDatabase();
+        Cursor cursor=db.query("notes",null,null,null,null,null,null);
+        ApplicationSetting.notes.clear();
+        if (cursor.moveToFirst()){
+            int i=0;
+            do{
+                long time=cursor.getLong(cursor.getColumnIndex("note_time"));
+                String content=cursor.getString(cursor.getColumnIndex("content"));
+                NoteItem item=new NoteItem(time,content);
+                ApplicationSetting.notes.add(item);
+            }while(cursor.moveToNext() && ++i<ApplicationSetting.MAX_NOTE_COUNT);
+        }
+    }
+    private void readClocks(){
+        SqliteHelper helper=new SqliteHelper(this,"clocks",null,1);
+        SQLiteDatabase db=helper.getWritableDatabase();
+        Cursor cursor=db.query("clocks",null,null,null,null,null,null);
+        ApplicationSetting.clocks.clear();
+        if (cursor.moveToFirst()){
+            int i=0;
+            do{
+                long time=cursor.getLong(cursor.getColumnIndex("clock_time"));
+                String location=cursor.getString(cursor.getColumnIndex("location"));
+                ApplicationSetting.clocks.add(new ClockItem(String.valueOf(time),location,time));
+            }while(cursor.moveToNext() && ++i<ApplicationSetting.MAX_CLOCK_COUNT);
+        }
     }
 }

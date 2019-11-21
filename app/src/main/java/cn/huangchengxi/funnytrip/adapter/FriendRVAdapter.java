@@ -22,6 +22,7 @@ public class FriendRVAdapter extends RecyclerView.Adapter<FriendRVHolder> {
     private List<FriendItem> list;
     private List<FriendItem> rvList;
     private HashMap<Character,ArrayList<FriendItem>> map;
+    private OnUserClick onUserClick;
 
     public FriendRVAdapter() {
         list=new ArrayList<>();
@@ -37,17 +38,32 @@ public class FriendRVAdapter extends RecyclerView.Adapter<FriendRVHolder> {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull FriendRVHolder holder, int position) {
+    public void onBindViewHolder(@NonNull FriendRVHolder holder, final int position) {
         FriendItem item=rvList.get(position);
         if (item.isFriendItem()){
             holder.friendName.setText(item.getUserName());
             holder.letter.setVisibility(View.GONE);
             holder.friendItem.setVisibility(View.VISIBLE);
+            holder.friendItem.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (onUserClick!=null){
+                        onUserClick.onClick(v,rvList.get(position));
+                    }
+                }
+            });
         }else{
             holder.friendItem.setVisibility(View.GONE);
             holder.letter.setVisibility(View.VISIBLE);
             holder.letter.setText(item.getLetter()+"");
         }
+    }
+    public interface OnUserClick{
+        void onClick(View view,FriendItem item);
+    }
+
+    public void setOnUserClick(OnUserClick onUserClick) {
+        this.onUserClick = onUserClick;
     }
 
     @Override

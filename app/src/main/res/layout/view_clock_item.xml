@@ -3,7 +3,13 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:background="@color/transparent"
-    android:layout_height="40dp">
+    android:layout_height="40dp"
+    android:layout_marginTop="5dp">
+    <View
+        android:id="@+id/left_bar"
+        android:background="@color/ThemeBlue"
+        android:layout_width="5dp"
+        android:layout_height="match_parent"/>
     <ImageView
         android:layout_marginLeft="5dp"
         android:layout_gravity="center"
@@ -18,6 +24,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
             <TextView
+                android:maxLines="2"
                 android:id="@+id/clock_location"
                 android:layout_weight="1"
                 android:gravity="center"

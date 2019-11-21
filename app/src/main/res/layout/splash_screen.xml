@@ -9,7 +9,7 @@
     android:background="@color/ThemeBlue">
     <ImageView
         android:id="@+id/splash_img"
-        android:layout_weight="8"
+        android:layout_weight="9"
         android:layout_width="match_parent"
         android:layout_height="0dp"/>
     <FrameLayout
@@ -26,17 +26,20 @@
             android:textAllCaps="false"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
-        <Button
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white"
+        <FrameLayout
             android:id="@+id/splash_skip_bt"
             android:shadowRadius="0"
-            android:background="@drawable/splash_screen_skip_bg"
+            android:background="@drawable/skip_button_bg"
             android:textAllCaps="false"
-            android:text="@string/skip_button_text"
             android:layout_gravity="center|right"
             android:layout_marginRight="20dp"
             android:layout_width="80dp"
-            android:layout_height="40dp" />
+            android:layout_height="40dp" >
+            <TextView
+                android:layout_gravity="center"
+                android:text="@string/skip_button_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </FrameLayout>
     </FrameLayout>
 </androidx.appcompat.widget.LinearLayoutCompat>

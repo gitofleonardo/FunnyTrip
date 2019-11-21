@@ -11,4 +11,7 @@
         <attr name="icon"></attr>
         <attr name="name" format="string"></attr>
     </declare-styleable>
+    <declare-styleable name="OptionView">
+        <attr name="text" format="string"/>
+    </declare-styleable>
 </resources>

@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.moments.MomentsFragment">
+    tools:context=".activity.moments.MomentsFragment"
+    android:background="@color/grey">
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/srl"
         android:layout_width="match_parent"

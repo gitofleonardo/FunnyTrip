@@ -1,6 +1,7 @@
 package cn.huangchengxi.funnytrip.activity.home;
 
 import android.content.DialogInterface;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
@@ -24,8 +25,11 @@ import com.baidu.mapapi.model.LatLng;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.util.Date;
+
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
+import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 
 public class ClockActivity extends BaseAppCompatActivity {
     public static final int SUCCESS=0;
@@ -93,13 +97,13 @@ public class ClockActivity extends BaseAppCompatActivity {
                 }else{
                     AlertDialog.Builder builder=new AlertDialog.Builder(ClockActivity.this);
                     builder.setTitle("确定在此地点打卡")
-                            .setCancelable(true)
+                            .setCancelable(false)
                             .setMessage(locationMsg+"\n"+"经度:"+latitude+"\n"+"纬度:"+longitude)
                             .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     //do process
-
+                                    insertIntoTableAndUpdate(locationMsg,latitude,longitude);
                                     //return to main
                                     setResult(SUCCESS);
                                     finish();
@@ -117,6 +121,12 @@ public class ClockActivity extends BaseAppCompatActivity {
                 }
             }
         }).setActionTextColor(Color.rgb(255,255,255)).setBackgroundTint(Color.rgb(3,169,244)).show();
+    }
+    private void insertIntoTableAndUpdate(String location,double latitude,double longitude){
+        SqliteHelper helper=new SqliteHelper(this,"clocks",null,1);
+        SQLiteDatabase db=helper.getWritableDatabase();
+        Date now=new Date();
+        db.execSQL("insert into clocks values("+now.getTime()+",\""+location+"\","+latitude+","+longitude+")");
     }
     private void init(){
         mapView=findViewById(R.id.clock_map);
