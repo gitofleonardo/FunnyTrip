@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.home.SplashScreen"
+    android:orientation="vertical"
+    android:background="@color/ThemeBlue">
+    <ImageView
+        android:id="@+id/splash_img"
+        android:layout_weight="8"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"/>
+    <FrameLayout
+        android:background="@color/white"
+        android:layout_weight="1"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_marginLeft="20dp"
+            android:textSize="20dp"
+            android:layout_gravity="center|left"
+            android:text="@string/app_name"
+            android:textAllCaps="false"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white"
+            android:id="@+id/splash_skip_bt"
+            android:shadowRadius="0"
+            android:background="@drawable/splash_screen_skip_bg"
+            android:textAllCaps="false"
+            android:text="@string/skip_button_text"
+            android:layout_gravity="center|right"
+            android:layout_marginRight="20dp"
+            android:layout_width="80dp"
+            android:layout_height="40dp" />
+    </FrameLayout>
+</androidx.appcompat.widget.LinearLayoutCompat>

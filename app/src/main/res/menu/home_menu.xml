@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group>
+        <item android:title="@string/account_security" android:id="@+id/account_sec"></item>
+        <item android:title="@string/account_info" android:id="@+id/account_info"></item>
+        <item android:title="@string/weather_location" android:id="@+id/weather"></item>
+    </group>
+    <group>
+        <item android:title="设置" android:id="@+id/setting"></item>
+        <item android:title="关于" android:id="@+id/about"></item>
+    </group>
+    <group>
+        <item android:title="@string/contact_me" android:id="@+id/contact_us"></item>
+    </group>
+</menu>
