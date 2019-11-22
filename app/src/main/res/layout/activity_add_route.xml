@@ -39,4 +39,13 @@
         app:backgroundTint="@color/white"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:src="@drawable/delete_grey"
+        android:layout_marginBottom="100dp"
+        android:layout_marginRight="20dp"
+        android:layout_gravity="right|bottom"
+        android:id="@+id/delete"
+        app:backgroundTint="@color/white"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

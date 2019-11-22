@@ -23,7 +23,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".activity.route.AddRouteActivity"></activity>
+        <activity android:name=".activity.tips.MyTipsActivity"></activity>
+        <activity android:name=".activity.tips.StarTipActivity" />
+        <activity android:name=".activity.route.AddRouteActivity" />
         <activity android:name=".activity.friend.AddFriendActivity" />
         <activity android:name=".activity.friend.ChattingActivity" />
         <activity android:name=".activity.friend.UserMomentActivity" />

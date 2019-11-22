@@ -12,14 +12,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
+import cn.huangchengxi.funnytrip.activity.clock.BottomClocksCallback;
 import cn.huangchengxi.funnytrip.item.ClockItem;
 import cn.huangchengxi.funnytrip.viewholder.ClockListHolder;
 
-public class ClockListAdapter extends RecyclerView.Adapter<ClockListHolder> {
+public class ClockListAdapter extends RecyclerView.Adapter<ClockListHolder> implements BottomClocksCallback.OnItemRemoved {
     private int[] colors={Color.rgb(255,87,34),Color.rgb(0,188,212),Color.rgb(255,235,59),Color.rgb(76,175,80),Color.rgb(103,58,183),Color.rgb(3,169,244)};
     private List<ClockItem> list;
-    public ClockListAdapter() {
+    private OnItemDelete onItemDelete;
+    private boolean isSwipeEnable;
+    private OnSwipeListener onSwipeListener;
+
+    public ClockListAdapter(boolean isSwipeEnable) {
         list=new ArrayList<>();
+        this.isSwipeEnable=isSwipeEnable;
     }
     @NonNull
     @Override
@@ -36,6 +42,10 @@ public class ClockListAdapter extends RecyclerView.Adapter<ClockListHolder> {
         holder.time.setText(item.getFormattedTime());
         int colorIndex=(int)(Math.random()*(colors.length-1));
         holder.leftDecorator.setBackgroundColor(colors[colorIndex]);
+
+        if (isSwipeEnable && onSwipeListener!=null){
+            onSwipeListener.onSwipe(holder);
+        }
     }
 
     @Override
@@ -49,5 +59,29 @@ public class ClockListAdapter extends RecyclerView.Adapter<ClockListHolder> {
     public void clear(){
         list.clear();
         notifyDataSetChanged();
+    }
+
+    @Override
+    public boolean onRemoved(int position) {
+        if (onItemDelete!=null){
+            onItemDelete.onDelete(list.get(position).getId());
+        }
+        list.remove(position);
+        notifyItemRemoved(position);
+        return true;
+    }
+    public interface OnItemDelete{
+        void onDelete(String clockId);
+    }
+    public interface OnSwipeListener{
+        void onSwipe(ClockListHolder holder);
+    }
+
+    public void setOnSwipeListener(OnSwipeListener onSwipeListener) {
+        this.onSwipeListener = onSwipeListener;
+    }
+
+    public void setOnItemDelete(OnItemDelete onItemDelete) {
+        this.onItemDelete = onItemDelete;
     }
 }

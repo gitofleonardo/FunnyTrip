@@ -1,17 +1,27 @@
 package cn.huangchengxi.funnytrip.activity.route;
 
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -27,9 +37,12 @@ import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.Overlay;
 import com.baidu.mapapi.map.OverlayOptions;
+import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.search.sug.OnGetSuggestionResultListener;
 import com.baidu.mapapi.search.sug.SuggestionResult;
@@ -62,16 +75,20 @@ public class AddRouteActivity extends BaseAppCompatActivity {
     private LocationClient client;
     private MyLocationListener myLocationListener;
     private FloatingActionButton showButton;
-    private List<PositionItem> positionItems;
+    private List<PositionItem> positionItems=new ArrayList<>();
     private RecyclerView bottomRecyclerView;
     private BottomPosAdapter bottomPosAdapter;
     private BottomSheetDialog bsd;
     private ImageView collapse;
     private TextView save;
     private TextView clear;
+    private ItemTouchHelper touchHelper;
+    private EditText routeName;
+    private FloatingActionButton delete;
+
+    private String routeId;
 
     private boolean isFromAutoFill=false;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +100,7 @@ public class AddRouteActivity extends BaseAppCompatActivity {
         initBottomSheet();
     }
     private void initBottomSheet(){
-        View view=View.inflate(this,R.layout.view_bottom_pos,null);
+        final View view=View.inflate(this,R.layout.view_bottom_pos,null);
         bottomRecyclerView=view.findViewById(R.id.bottom_pos_rv);
         collapse=view.findViewById(R.id.collapse);
         collapse.setOnClickListener(new View.OnClickListener() {
@@ -106,29 +123,135 @@ public class AddRouteActivity extends BaseAppCompatActivity {
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveToDatabaseAndCloud("路线");
-                Toast.makeText(AddRouteActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
-                finish();
+                if (routeName.getText().toString().length()>0 && routeName.getText().toString().length()<20){
+                    if (positionItems.size()<2){
+                        AlertDialog.Builder builder=new AlertDialog.Builder(AddRouteActivity.this);
+                        builder.setTitle("位置必须大于2个").setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        }).show();
+                    }else{
+                        saveToDatabaseAndCloud(routeName.getText().toString());
+                        Toast.makeText(AddRouteActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                }else{
+                    routeName.setError("名称长度错误");
+                }
             }
         });
-        positionItems=new ArrayList<>();
         bottomPosAdapter=new BottomPosAdapter(positionItems);
         bottomRecyclerView.setAdapter(bottomPosAdapter);
         bottomRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         bsd=new BottomSheetDialog(this);
         bsd.setContentView(view);
+        bsd.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                routeName.clearFocus();
+            }
+        });
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        bottomPosAdapter.setOnDragListionListener(new BottomPosAdapter.OnDragListionListener() {
+            @Override
+            public void onDrag(RecyclerView.ViewHolder holder) {
+                touchHelper.startDrag(holder);
+            }
+        });
+        bottomPosAdapter.setOnItemChangedListener(new BottomPosAdapter.OnItemChangedListener() {
+            @Override
+            public void onChanged() {
+                updateMapOverlay();
+            }
+        });
+        ItemTouchHelper.Callback callback=new BottomSheetHelperCallback(bottomPosAdapter);
+        touchHelper=new ItemTouchHelper(callback);
+        touchHelper.attachToRecyclerView(bottomRecyclerView);
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                routeName.clearFocus();
+            }
+        });
+        routeName=view.findViewById(R.id.name);
+        routeName.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (event.getAction() == KeyEvent.ACTION_UP && keyCode == event.KEYCODE_ENTER) {
+                    InputMethodManager manager=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                    manager.hideSoftInputFromWindow(view.getWindowToken(),0);
+                    routeName.clearFocus();
+                }
+                return false;
+            }
+        });
+        routeName.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (event.getKeyCode()==KeyEvent.KEYCODE_ENTER){
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+    private class MyMarkClickListener implements BaiduMap.OnMarkerClickListener{
+        @Override
+        public boolean onMarkerClick(Marker marker) {
+            String name=marker.getExtraInfo().getString("name","null");
+            showMarkerSnackInfo(name);
+            return true;
+        }
+    }
+    private void showMarkerSnackInfo(String name){
+        Snackbar.make(findViewById(R.id.coordinator),name,Snackbar.LENGTH_INDEFINITE).show();
+    }
+    private void updateMapOverlay(){
+        if (positionItems.size()>=2){
+            baiduMap.clear();
+            List<LatLng> points=new ArrayList<>();
+            for (int i=0;i<positionItems.size();i++){
+                points.add(new LatLng(positionItems.get(i).getLatitude(),positionItems.get(i).getLongitude()));
+            }
+            OverlayOptions options=new PolylineOptions().width(10).color(Color.rgb(255,0,0)).points(points);
+            Overlay mOverlay=baiduMap.addOverlay(options);
+            for (int i=0;i<positionItems.size();i++){
+                Log.e("name",positionItems.get(i).getName());
+                markMap(new LatLng(positionItems.get(i).getLatitude(), positionItems.get(i).getLongitude()),positionItems.get(i).getName());
+            }
+            baiduMap.setOnMarkerClickListener(new MyMarkClickListener());
+            LatLng latLng=points.get(points.size()/2);
+            MapStatus mapStatus=new MapStatus.Builder().target(latLng).zoom(15).build();
+            MapStatusUpdate mapStatusUpdate= MapStatusUpdateFactory.newMapStatus(mapStatus);
+            baiduMap.setMapStatus(mapStatusUpdate);
+            setMapCenterTo(new LatLng(latLng.latitude,latLng.longitude));
+        }
     }
     private void saveToDatabaseAndCloud(String name){
         Date now=new Date();
         SqliteHelper helper=new SqliteHelper(this,"routes",null,1);
         SQLiteDatabase db=helper.getWritableDatabase();
-        db.execSQL("insert into routes values(\""+name+"\","+now.getTime()+")");
+        if (routeId==null){
+            db.execSQL("insert into routes values(\""+name+"\","+now.getTime()+")");
 
-        helper=new SqliteHelper(this,"positions",null,1);
-        db=helper.getWritableDatabase();
-        for (int i=0;i<positionItems.size();i++){
-            PositionItem item=positionItems.get(i);
-            db.execSQL("insert into positions values(\""+item.getName()+"\","+item.getLatitude()+","+item.getLongitude()+","+now.getTime()+","+i+")");
+            helper=new SqliteHelper(this,"positions",null,1);
+            db=helper.getWritableDatabase();
+            for (int i=0;i<positionItems.size();i++){
+                PositionItem item=positionItems.get(i);
+                db.execSQL("insert into positions values(\""+item.getName()+"\","+item.getLatitude()+","+item.getLongitude()+","+now.getTime()+","+i+")");
+            }
+        }else{
+            db.execSQL("update routes set name=\""+name+"\" where route_time="+routeId);
+
+            helper=new SqliteHelper(this,"positions",null,1);
+            db=helper.getWritableDatabase();
+            db.execSQL("delete from positions where route="+routeId);
+            for (int i=0;i<positionItems.size();i++){
+                PositionItem item=positionItems.get(i);
+                db.execSQL("insert into positions values(\""+item.getName()+"\","+item.getLatitude()+","+item.getLongitude()+","+now.getTime()+","+i+")");
+            }
         }
     }
     private void initSearch(){
@@ -152,7 +275,55 @@ public class AddRouteActivity extends BaseAppCompatActivity {
         onGetResult=new OnGetResult();
         suggestionSearch.setOnGetSuggestionResultListener(onGetResult);
     }
+    private void hideKeyboard(){
+        InputMethodManager manager=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        manager.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(),0);
+    }
+    private void deleteFromDatabase(){
+        SqliteHelper helper=new SqliteHelper(this,"routes",null,1);
+        SQLiteDatabase db=helper.getWritableDatabase();
+        db.execSQL("delete from routes where route_time="+routeId);
+        helper=new SqliteHelper(this,"positions",null,1);
+        db=helper.getWritableDatabase();
+        db.execSQL("delete from positions where route="+routeId);
+    }
     private void init(){
+        routeId=getIntent().getStringExtra("route_id");
+        delete=findViewById(R.id.delete);
+        if (routeId!=null){
+            delete.setVisibility(View.VISIBLE);
+            delete.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AlertDialog.Builder builder=new AlertDialog.Builder(AddRouteActivity.this);
+                    builder.setTitle("确定删除").setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            deleteFromDatabase();
+                            finish();
+                        }
+                    }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    }).show();
+                }
+            });
+            //read data from database
+            SqliteHelper helper=new SqliteHelper(this,"positions",null,1);
+            SQLiteDatabase db=helper.getWritableDatabase();
+            Cursor cursor=db.query("positions",null,"route=?",new String[]{routeId},null,null,"pos_index",null);
+            if (cursor.moveToFirst()){
+                do{
+                    PositionItem item=new PositionItem(routeId,cursor.getString(cursor.getColumnIndex("name")),cursor.getDouble(cursor.getColumnIndex("latitude")),cursor.getDouble(cursor.getColumnIndex("longitude")));
+                    positionItems.add(item);
+                }while (cursor.moveToNext());
+            }
+        }else{
+            delete.setVisibility(View.GONE);
+            //do nothing
+        }
         recyclerView=findViewById(R.id.sug_rv);
         adapter=new SearchResultAdapter();
         adapter.setOnAddressClick(new SearchResultAdapter.OnAddressClick() {
@@ -160,12 +331,13 @@ public class AddRouteActivity extends BaseAppCompatActivity {
             public void onClick(View view, SuggestionResult.SuggestionInfo info) {
                 baiduMap.clear();
                 setMapCenterTo(info.pt);
-                markMap(info.pt);
+                markMap(info.pt,info.key);
                 showRecordSnackBar(info);
                 searchBar.setText(info.key);
                 searchBar.clearFocus();
                 isFromAutoFill=true;
                 adapter.clear();
+                hideKeyboard();
             }
         });
         recyclerView.setAdapter(adapter);
@@ -191,6 +363,17 @@ public class AddRouteActivity extends BaseAppCompatActivity {
                 }
             }
         });
+        searchBar.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (event.getKeyCode()==KeyEvent.KEYCODE_ENTER){
+                    searchBar.clearFocus();
+                    hideKeyboard();
+                    return true;
+                }
+                return false;
+            }
+        });
         showButton=findViewById(R.id.show);
         showButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -198,9 +381,11 @@ public class AddRouteActivity extends BaseAppCompatActivity {
                 showBottomSheet();
             }
         });
+        updateMapOverlay();
     }
     private void showBottomSheet(){
         bsd.show();
+        //bottomPosAdapter.highLightedItem(sugIndex);
     }
     private class OnGetResult implements OnGetSuggestionResultListener{
         @Override
@@ -220,11 +405,13 @@ public class AddRouteActivity extends BaseAppCompatActivity {
             builder.latitude(latitude).longitude(longitude).accuracy(bdLocation.getRadius()).direction(bdLocation.getDirection());
             MyLocationData data=builder.build();
             baiduMap.setMyLocationData(data);
-            LatLng latLng=new LatLng(bdLocation.getLatitude(),bdLocation.getLongitude());
-            MapStatus mapStatus=new MapStatus.Builder().target(latLng).zoom(15).build();
-            MapStatusUpdate mapStatusUpdate= MapStatusUpdateFactory.newMapStatus(mapStatus);
-            baiduMap.setMapStatus(mapStatusUpdate);
-            setMapCenterTo(new LatLng(bdLocation.getLatitude(),bdLocation.getLongitude()));
+            if (routeId==null){
+                LatLng latLng=new LatLng(bdLocation.getLatitude(),bdLocation.getLongitude());
+                MapStatus mapStatus=new MapStatus.Builder().target(latLng).zoom(15).build();
+                MapStatusUpdate mapStatusUpdate= MapStatusUpdateFactory.newMapStatus(mapStatus);
+                baiduMap.setMapStatus(mapStatusUpdate);
+                setMapCenterTo(new LatLng(bdLocation.getLatitude(),bdLocation.getLongitude()));
+            }
         }
     }
     private void showRecordSnackBar(final SuggestionResult.SuggestionInfo info){
@@ -235,6 +422,7 @@ public class AddRouteActivity extends BaseAppCompatActivity {
                 PositionItem item=new PositionItem(String.valueOf(date.getTime()),info.key,info.pt.latitude,info.pt.longitude);
                 positionItems.add(item);
                 bottomPosAdapter.notifyDataSetChanged();
+                updateMapOverlay();
             }
         }).show();
     }
@@ -243,11 +431,14 @@ public class AddRouteActivity extends BaseAppCompatActivity {
         MapStatusUpdate mapStatusUpdate= MapStatusUpdateFactory.newMapStatus(mapStatus);
         baiduMap.setMapStatus(mapStatusUpdate);
     }
-    private void markMap(LatLng point){
+    private void markMap(LatLng point,String posName){
         BitmapDescriptor bitmap = BitmapDescriptorFactory
                 .fromResource(R.drawable.marker_small);
+        Bundle bundle=new Bundle();
+        bundle.putString("name",posName);
         OverlayOptions option = new MarkerOptions()
                 .position(point)
+                .extraInfo(bundle)
                 .icon(bitmap);
         baiduMap.addOverlay(option);
     }
@@ -260,7 +451,6 @@ public class AddRouteActivity extends BaseAppCompatActivity {
         }
 
     }
-
     @Override
     protected void onDestroy() {
         suggestionSearch.destroy();
@@ -278,5 +468,10 @@ public class AddRouteActivity extends BaseAppCompatActivity {
     protected void onPause() {
         mapView.onPause();
         super.onPause();
+    }
+    public static void startAddRouteActivityForResult(Context context,int requestCode,String routeId){
+        Intent intent=new Intent(context,AddRouteActivity.class);
+        intent.putExtra("route_id",routeId);
+        ((AppCompatActivity)context).startActivityForResult(intent,requestCode);
     }
 }

@@ -14,4 +14,8 @@
     <declare-styleable name="OptionView">
         <attr name="text" format="string"/>
     </declare-styleable>
+    <declare-styleable name="AboutOption">
+        <attr name="main"></attr>
+        <attr name="sub"></attr>
+    </declare-styleable>
 </resources>

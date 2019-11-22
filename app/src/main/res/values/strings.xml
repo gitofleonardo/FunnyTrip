@@ -28,7 +28,12 @@
     <string name="start">起</string>
     <string name="end">终</string>
     <string name="clear">清空</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="find_more">发现更多</string>
+    <string name="all">全部</string>
+    <string name="search_tips">搜索攻略</string>
+    <string name="data_from_ctrip">网页来源:携程网</string>
+    <string name="add_to_star">添加到收藏</string>
+    <string name="name">名称</string>
+    <string name="my_tips">我的攻略</string>
+    <string name="settings">设置</string>
 </resources>

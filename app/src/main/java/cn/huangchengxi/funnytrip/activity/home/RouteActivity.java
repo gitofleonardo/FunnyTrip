@@ -35,6 +35,7 @@ public class RouteActivity extends AppCompatActivity {
     private SwipeRefreshLayout srl;
 
     private final int ADD_RC=0;
+    private final int EDIT_RC=1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +57,8 @@ public class RouteActivity extends AppCompatActivity {
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivityForResult(new Intent(RouteActivity.this, AddRouteActivity.class),ADD_RC);
+                //startActivityForResult(new Intent(RouteActivity.this, AddRouteActivity.class),ADD_RC);
+                AddRouteActivity.startAddRouteActivityForResult(RouteActivity.this,ADD_RC,null);
             }
         });
         recyclerView=findViewById(R.id.route_rv);
@@ -64,7 +66,12 @@ public class RouteActivity extends AppCompatActivity {
         adapter=new RouteAdapter(list,this);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
+        adapter.setOnRouteClick(new RouteAdapter.OnRouteClick() {
+            @Override
+            public void onClick(View view, int position) {
+                AddRouteActivity.startAddRouteActivityForResult(RouteActivity.this,EDIT_RC,list.get(position).getRouteId());
+            }
+        });
         srl=findViewById(R.id.srl);
         srl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -84,6 +91,9 @@ public class RouteActivity extends AppCompatActivity {
                 //do update list process
                 updateRoutes();
                 break;
+            case EDIT_RC:
+                updateRoutes();
+                break;
         }
     }
     private void updateRoutes(){
@@ -96,15 +106,15 @@ public class RouteActivity extends AppCompatActivity {
             List<RouteItem> routes=new ArrayList<>();
             do{
                 long time=c1.getLong(c1.getColumnIndex("route_time"));
+                String name=c1.getString(c1.getColumnIndex("name"));
                 Cursor c2=db2.query("positions",null,"route=?",new String[]{String.valueOf(time)},null,null,"pos_index");
                 if (c2.moveToFirst()){
                     List<PositionItem> positions=new ArrayList<>();
                     do{
                         PositionItem item=new PositionItem(String.valueOf(time),c2.getString(c2.getColumnIndex("name")),c2.getDouble(c2.getColumnIndex("latitude")),c2.getDouble(c2.getColumnIndex("longitude")));
                         positions.add(item);
-                        Log.e("pos",item.getName()+item.getPosId());
                     }while (c2.moveToNext());
-                    routes.add(new RouteItem(positions,String.valueOf(time)));
+                    routes.add(new RouteItem(positions,String.valueOf(time),name));
                 }
             }while(c1.moveToNext());
             list.clear();

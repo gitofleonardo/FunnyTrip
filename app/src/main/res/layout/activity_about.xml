@@ -1,9 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.navigation.AboutActivity">
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    tools:context=".activity.navigation.AboutActivity"
+    android:orientation="vertical"
+    android:fillViewport="true">
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/toolbar_height">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <ImageView
+                android:id="@+id/back"
+                android:src="@drawable/back"
+                android:layout_gravity="center|left"
+                android:layout_width="@dimen/toolbar_back_size"
+                android:layout_height="@dimen/toolbar_back_size"/>
+            <TextView
+                android:text="关于"
+                android:textAllCaps="false"
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </FrameLayout>
+    </androidx.appcompat.widget.Toolbar>
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <cn.huangchengxi.funnytrip.view.AboutOption
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?selectableItemBackground"
+                app:main="说明"
+                app:sub="本应用为黄承喜设计，并开发的一款能够帮助您在旅行前、中、后进行规划的应用。其中程序部分使用到了百度地图SDK。\n本应用服务器搭建于huangchengxi.cn,若您觉得有兴趣，或者想有技术交流，欢迎与我进行联系。"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+            <cn.huangchengxi.funnytrip.view.AboutOption
+                android:id="@+id/my_homepage"
+                app:main="我的主页"
+                app:sub="http://www.huangchengxi.cn"
+                android:foreground="?selectableItemBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+            <cn.huangchengxi.funnytrip.view.AboutOption
+                android:id="@+id/my_mail"
+                app:main="开发者"
+                app:sub="971840889@qq.com"
+                android:foreground="?selectableItemBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+            <cn.huangchengxi.funnytrip.view.AboutOption
+                android:clickable="true"
+                android:focusable="true"
+                app:main="致谢"
+                app:sub="百度地图开放平台"
+                android:foreground="?selectableItemBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

@@ -24,6 +24,7 @@
             android:layout_height="0dp"/>
     </LinearLayout>
     <FrameLayout
+        android:id="@+id/touch_frame"
         android:layout_gravity="center|right"
         android:layout_width="50dp"
         android:layout_height="50dp">

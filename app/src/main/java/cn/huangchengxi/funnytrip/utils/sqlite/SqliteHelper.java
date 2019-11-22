@@ -18,6 +18,10 @@ public class SqliteHelper extends SQLiteOpenHelper {
         String clockTable="create table clocks(clock_time long unique,location varchar(200),latitude double,longitude double)";
         String routeTable="create table routes(name varchar(20),route_time long)";
         String positionTable="create table positions(name varchar(100),latitude double,longitude double,route long,pos_index int)";
+        String tipsUrl="create table tips(id long,url text,title text)";
+        String settingTable="create table settings(max_note int,max_clock int)";
+        db.execSQL(settingTable);
+        db.execSQL(tipsUrl);
         db.execSQL(positionTable);
         db.execSQL(routeTable);
         db.execSQL(clockTable);

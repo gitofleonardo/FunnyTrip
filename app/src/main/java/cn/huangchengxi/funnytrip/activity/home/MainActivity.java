@@ -3,6 +3,7 @@ package cn.huangchengxi.funnytrip.activity.home;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -20,6 +21,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,6 +31,7 @@ import com.baidu.location.BDLocation;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationView;
 
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +44,7 @@ import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
+import cn.huangchengxi.funnytrip.activity.clock.BottomClocksCallback;
 import cn.huangchengxi.funnytrip.activity.navigation.AboutActivity;
 import cn.huangchengxi.funnytrip.activity.navigation.AccountInfoActivity;
 import cn.huangchengxi.funnytrip.activity.navigation.AccountSecurityActivity;
@@ -55,6 +60,7 @@ import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.setting.ApplicationSetting;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import cn.huangchengxi.funnytrip.view.HomeAppView;
+import cn.huangchengxi.funnytrip.viewholder.ClockListHolder;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -90,6 +96,8 @@ public class MainActivity extends BaseAppCompatActivity {
     private String weatherDes;
     private FrameLayout noteWrite;
     private CardView myNote;
+    private FrameLayout showAllClocks;
+    private HomeAppView tipsView;
 
     private final int WEATHER_OK=0;
     private final int WEATHER_FAIL=1;
@@ -98,6 +106,7 @@ public class MainActivity extends BaseAppCompatActivity {
     private final int CLOCK_RC=0;
     private final int WEATHER_RC=1;
     private final int NOTE_RC=2;
+    private final int SETTINGS_RC=3;
 
     private MyHandler myHandler=new MyHandler();
 
@@ -110,7 +119,7 @@ public class MainActivity extends BaseAppCompatActivity {
     }
     private void init(){
         clockListView=findViewById(R.id.clock_list);
-        clockListAdapter=new ClockListAdapter();
+        clockListAdapter=new ClockListAdapter(false);
         for (int i=0;i<ApplicationSetting.clocks.size();i++){
             clockListAdapter.add(ApplicationSetting.clocks.get(i));
         }
@@ -215,13 +224,20 @@ public class MainActivity extends BaseAppCompatActivity {
                         startActivity(new Intent(MainActivity.this, AccountInfoActivity.class));
                         break;
                     case R.id.setting:
-                        startActivity(new Intent(MainActivity.this, SettingActivity.class));
+                        startActivityForResult(new Intent(MainActivity.this, SettingActivity.class),SETTINGS_RC);
                         break;
                     case R.id.about:
-                        startActivity(new Intent(MainActivity.this, AboutActivity.class));
+                        startActivityForResult(new Intent(MainActivity.this, AboutActivity.class),SETTINGS_RC);
                         break;
                     case R.id.contact_us:
-                        startActivity(new Intent(MainActivity.this, ContactActivity.class));
+                        //startActivity(new Intent(MainActivity.this, ContactActivity.class));
+                        try {
+                            String url = "mqqwpa://im/chat?chat_type=wpa&uin=971840889";
+                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(MainActivity.this, "调起QQ失败", Toast.LENGTH_SHORT).show();
+                        }
                         break;
                     case R.id.weather:
                         startActivityForResult(new Intent(MainActivity.this,WeatherPicker.class),WEATHER_RC);
@@ -244,6 +260,13 @@ public class MainActivity extends BaseAppCompatActivity {
                 }
             }
         });
+        tipsView=findViewById(R.id.home_app_tips);
+        tipsView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,TipsActivity.class));
+            }
+        });
         routeView=findViewById(R.id.home_app_route);
         routeView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -251,7 +274,13 @@ public class MainActivity extends BaseAppCompatActivity {
                 startActivity(new Intent(MainActivity.this,RouteActivity.class));
             }
         });
-
+        showAllClocks=findViewById(R.id.show_more_clock);
+        showAllClocks.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showClocksBottomSheet();
+            }
+        });
         locationClient=new LocationClient(this);
         locationFetcher=new LocationFetcher();
         locationClient.registerLocationListener(locationFetcher);
@@ -269,6 +298,54 @@ public class MainActivity extends BaseAppCompatActivity {
         locationClient.start();
 
         fetchWeather();
+    }
+    private void showClocksBottomSheet(){
+        final View view=View.inflate(this,R.layout.view_my_clock_all,null);
+        RecyclerView rv=view.findViewById(R.id.bottom_clock_rv);
+        rv.setItemAnimator(new DefaultItemAnimator());
+        final ClockListAdapter cla=new ClockListAdapter(true);
+        ItemTouchHelper.Callback callback=new BottomClocksCallback(cla);
+        final ItemTouchHelper helper=new ItemTouchHelper(callback);
+        cla.setOnSwipeListener(new ClockListAdapter.OnSwipeListener() {
+            @Override
+            public void onSwipe(ClockListHolder holder) {
+                helper.startSwipe(holder);
+            }
+        });
+        helper.attachToRecyclerView(rv);
+        cla.setOnItemDelete(new ClockListAdapter.OnItemDelete() {
+            @Override
+            public void onDelete(String clockId) {
+                SqliteHelper helper=new SqliteHelper(MainActivity.this,"clocks",null,1);
+                SQLiteDatabase db=helper.getWritableDatabase();
+                db.execSQL("delete from clocks where clock_time="+clockId);
+                updateClockList();
+            }
+        });
+        rv.setAdapter(cla);
+        rv.setLayoutManager(new LinearLayoutManager(this));
+        final BottomSheetDialog bsd=new BottomSheetDialog(this);
+        bsd.setContentView(view);
+        ImageView back=view.findViewById(R.id.collapse);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                bsd.dismiss();
+            }
+        });
+        //load data
+        SqliteHelper dbhelper=new SqliteHelper(MainActivity.this,"clocks",null,1);
+        SQLiteDatabase db=dbhelper.getWritableDatabase();
+        Cursor cursor=db.query("clocks",null,null,null,null,null,null);
+        if (cursor.moveToFirst()){
+            do{
+                long time=cursor.getLong(cursor.getColumnIndex("clock_time"));
+                String location=cursor.getString(cursor.getColumnIndex("location"));
+                ClockItem item=new ClockItem(String.valueOf(time),location,time);
+                cla.add(item);
+            }while(cursor.moveToNext());
+        }
+        bsd.show();
     }
     private void fetchWeather(){
         if (ApplicationSetting.WEATHER_ID!=null){
@@ -352,6 +429,10 @@ public class MainActivity extends BaseAppCompatActivity {
             case CLOCK_RC:
                 updateClockList();
                 break;
+            case SETTINGS_RC:
+                updateNoteList();
+                updateClockList();
+                break;
         }
     }
     private void updateClockList(){
@@ -389,7 +470,7 @@ public class MainActivity extends BaseAppCompatActivity {
         }
     }
     private void updateWeather(final String weatherID){
-        HttpHelper.sendOKHttpRequest("http://guolin.tech/api/weather?cityid=" + weatherID, new Callback() {
+        HttpHelper.sendOKHttpRequest("https://api.heweather.net/s6/weather/now?location="+weatherID+"&key=557905c76c73431882f6823b7e2336d8" + weatherID, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 Message msg=myHandler.obtainMessage();

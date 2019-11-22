@@ -57,8 +57,12 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchSugHolder> {
     public void setOnAddressClick(OnAddressClick onAddressClick) {
         this.onAddressClick = onAddressClick;
     }
-    public void addAll(Collection<SuggestionResult.SuggestionInfo> infos){
-        list.addAll(infos);
+    public void addAll(List<SuggestionResult.SuggestionInfo> infos){
+        for (int i=0;i<infos.size();i++){
+            list.add(infos.get(i));
+            notifyItemInserted(list.size()-1);
+        }
+        //list.addAll(infos);
         notifyDataSetChanged();
     }
     public void clear(){

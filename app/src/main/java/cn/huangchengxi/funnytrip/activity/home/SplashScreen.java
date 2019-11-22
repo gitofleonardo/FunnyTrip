@@ -121,6 +121,16 @@ public class SplashScreen extends BaseAppCompatActivity {
         if (cursor.moveToFirst()){
             ApplicationSetting.WEATHER_ID=cursor.getString(cursor.getColumnIndex("id"));
         }
+        //read app settings
+        helper=new SqliteHelper(this,"settings",null,1);
+        db=helper.getWritableDatabase();
+        Cursor cursor1=db.query("settings",null,null,null,null,null,null);
+        if (!cursor1.moveToFirst()){
+            db.execSQL("insert into settings values(3,3)");
+        }else{
+            ApplicationSetting.MAX_CLOCK_COUNT=cursor1.getInt(cursor1.getColumnIndex("max_clock"));
+            ApplicationSetting.MAX_NOTE_COUNT=cursor1.getInt(cursor1.getColumnIndex("max_note"));
+        }
         return true;
     }
     private void readNotes(){
