@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 public class PermissionHelper {
     private PermissionHelper(){}
@@ -20,14 +22,15 @@ public class PermissionHelper {
 
     public static void requestNeededPermissions(Context context,int requestCode){
         for (String permission:neededPermissions){
-            if (context.checkSelfPermission(permission)!= PackageManager.PERMISSION_GRANTED){
-                ((AppCompatActivity)context).requestPermissions(neededPermissions,requestCode);
+            if (ContextCompat.checkSelfPermission(context,permission)!= PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions((AppCompatActivity)context,neededPermissions,requestCode);
+                break;
             }
         }
     }
     public static boolean checkNeededPermissions(Context context){
         for (String permission:neededPermissions){
-            if (context.checkSelfPermission(permission)!=PackageManager.PERMISSION_GRANTED){
+            if (ContextCompat.checkSelfPermission(context,permission)!=PackageManager.PERMISSION_GRANTED){
                 return false;
             }
         }

@@ -4,11 +4,14 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import cn.huangchengxi.funnytrip.R;
 
 public class BaseAppCompatActivity extends AppCompatActivity {
     @Override
@@ -49,5 +52,6 @@ public class BaseAppCompatActivity extends AppCompatActivity {
         }else{
             activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         }
+        //then set root view
     }
 }

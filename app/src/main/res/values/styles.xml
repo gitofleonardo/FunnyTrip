@@ -18,4 +18,12 @@
         <attr name="main"></attr>
         <attr name="sub"></attr>
     </declare-styleable>
+    <declare-styleable name="OptionDetailView">
+        <attr name="main"></attr>
+        <attr name="sub"></attr>
+    </declare-styleable>
+    <declare-styleable name="SwitchOptionView">
+        <attr name="on" format="boolean"></attr>
+        <attr name="main" format="string"></attr>
+    </declare-styleable>
 </resources>

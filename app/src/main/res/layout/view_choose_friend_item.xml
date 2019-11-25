@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/friend_container">
+    <ImageView
+        android:layout_margin="5dp"
+        android:id="@+id/friend_portrait"
+        android:src="@drawable/portrait"
+        android:layout_width="40dp"
+        android:layout_height="40dp"/>
+    <TextView
+        android:layout_weight="1"
+        android:text="name"
+        android:textAllCaps="false"
+        android:id="@+id/friend_name"
+        android:layout_marginLeft="5dp"
+        android:gravity="left|center"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"/>
+    <ImageView
+        android:id="@+id/is_friend_selected"
+        android:src="@drawable/check"
+        android:layout_gravity="center"
+        android:layout_width="18dp"
+        android:layout_height="18dp"/>
+</LinearLayout>

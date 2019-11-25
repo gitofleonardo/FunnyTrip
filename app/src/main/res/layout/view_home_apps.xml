@@ -85,9 +85,9 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"/>
         <cn.huangchengxi.funnytrip.view.HomeAppView
-            android:id="@+id/home_app_resource"
-            app:icon="@drawable/resource"
-            app:name="资源"
+            android:id="@+id/home_app_weather"
+            app:icon="@drawable/weather"
+            app:name="天气"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="match_parent"/>

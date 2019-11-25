@@ -26,6 +26,7 @@ import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
 import cn.huangchengxi.funnytrip.item.ClockItem;
 import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.utils.PermissionHelper;
+import cn.huangchengxi.funnytrip.utils.StorageHelper;
 import cn.huangchengxi.funnytrip.utils.setting.ApplicationSetting;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 
@@ -71,6 +72,8 @@ public class SplashScreen extends BaseAppCompatActivity {
     }
     private void requestPermission(){
         if (PermissionHelper.checkNeededPermissions(this)){
+            StorageHelper.getExternalDirectory();
+
             waitForSkip=new Timer();
             myTimerTask=new MyTimerTask();
             waitForSkip.schedule(myTimerTask,100);
@@ -85,11 +88,12 @@ public class SplashScreen extends BaseAppCompatActivity {
             if (!PermissionHelper.checkNeededPermissions(this)){
                 Toast.makeText(this, getString(R.string.permissions_not_completed), Toast.LENGTH_SHORT).show();
             }
+            StorageHelper.getExternalDirectory();
             if (waitForSkip!=null){
                 waitForSkip.cancel();
             }
-            myTimerTask=new MyTimerTask();
-            waitForSkip.schedule(myTimerTask,100);
+            waitForSkip=new Timer();
+            waitForSkip.schedule(new MyTimerTask(),100);
         }
     }
     private class MyHandler extends Handler{

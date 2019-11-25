@@ -78,7 +78,6 @@ public class FriendRVAdapter extends RecyclerView.Adapter<FriendRVHolder> {
     }
     private void makeList(){
         for (FriendItem item:list){
-            Log.e("eng",NameHelper.ChineseToFirstLetter(item.getUserName()));
             char f=NameHelper.ChineseToFirstLetter(item.getUserName()).charAt(0);
             if (f>='A' && f<='Z'){
                 if (map.containsKey(f)){

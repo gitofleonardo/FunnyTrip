@@ -1,9 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.home.SignUpActivity">
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    tools:context=".activity.home.SignUpActivity"
+    android:orientation="vertical"
+    android:background="@drawable/bg1">
+    <LinearLayout
+        android:id="@+id/text_container"
+        android:layout_marginTop="20dp"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <EditText
+            android:paddingLeft="10dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="20dp"
+            android:hint="使用邮箱注册"
+            android:id="@+id/account"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/search_bar_bg"/>
+        <EditText
+            android:paddingLeft="10dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="20dp"
+            android:hint="密码"
+            android:id="@+id/password"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/search_bar_bg"/>
+        <EditText
+            android:id="@+id/invite_code"
+            android:hint="邀请码"
+            android:background="@drawable/search_bar_bg"
+            android:paddingLeft="10dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"/>
+    </LinearLayout>
+    <Button
+        android:id="@+id/sign_up_button"
+        android:layout_marginTop="220dp"
+        android:textColor="@color/white"
+        android:text="@string/sign_up"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:textAllCaps="false"
+        android:background="@drawable/send_button_bg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

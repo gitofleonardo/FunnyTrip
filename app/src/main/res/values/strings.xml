@@ -36,4 +36,7 @@
     <string name="name">名称</string>
     <string name="my_tips">我的攻略</string>
     <string name="settings">设置</string>
+    <string name="login">登录</string>
+    <string name="forget_passwd">忘记密码</string>
+    <string name="sign_up">注册</string>
 </resources>

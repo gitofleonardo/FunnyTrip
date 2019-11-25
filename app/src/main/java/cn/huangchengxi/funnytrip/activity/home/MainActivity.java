@@ -39,16 +39,16 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
+import cn.huangchengxi.funnytrip.activity.account.MyHomepageActivity;
+import cn.huangchengxi.funnytrip.activity.friend.FriendDetailActivity;
+import cn.huangchengxi.funnytrip.activity.weather.WeatherActivity;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
 import cn.huangchengxi.funnytrip.activity.clock.BottomClocksCallback;
 import cn.huangchengxi.funnytrip.activity.navigation.AboutActivity;
 import cn.huangchengxi.funnytrip.activity.navigation.AccountInfoActivity;
 import cn.huangchengxi.funnytrip.activity.navigation.AccountSecurityActivity;
-import cn.huangchengxi.funnytrip.activity.navigation.ContactActivity;
 import cn.huangchengxi.funnytrip.activity.navigation.SettingActivity;
 import cn.huangchengxi.funnytrip.activity.note.MyNoteActivity;
 import cn.huangchengxi.funnytrip.adapter.ClockListAdapter;
@@ -57,6 +57,7 @@ import cn.huangchengxi.funnytrip.item.ClockItem;
 import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.item.WeatherNow;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
+import cn.huangchengxi.funnytrip.utils.setting.AccountState;
 import cn.huangchengxi.funnytrip.utils.setting.ApplicationSetting;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import cn.huangchengxi.funnytrip.view.HomeAppView;
@@ -98,6 +99,9 @@ public class MainActivity extends BaseAppCompatActivity {
     private CardView myNote;
     private FrameLayout showAllClocks;
     private HomeAppView tipsView;
+    private HomeAppView weatherView;
+    private HomeAppView teamView;
+    private ImageView navPortrait;
 
     private final int WEATHER_OK=0;
     private final int WEATHER_FAIL=1;
@@ -107,6 +111,7 @@ public class MainActivity extends BaseAppCompatActivity {
     private final int WEATHER_RC=1;
     private final int NOTE_RC=2;
     private final int SETTINGS_RC=3;
+    private final int LOGIN_RC=4;
 
     private MyHandler myHandler=new MyHandler();
 
@@ -227,7 +232,7 @@ public class MainActivity extends BaseAppCompatActivity {
                         startActivityForResult(new Intent(MainActivity.this, SettingActivity.class),SETTINGS_RC);
                         break;
                     case R.id.about:
-                        startActivityForResult(new Intent(MainActivity.this, AboutActivity.class),SETTINGS_RC);
+                        startActivity(new Intent(MainActivity.this, AboutActivity.class));
                         break;
                     case R.id.contact_us:
                         //startActivity(new Intent(MainActivity.this, ContactActivity.class));
@@ -274,11 +279,38 @@ public class MainActivity extends BaseAppCompatActivity {
                 startActivity(new Intent(MainActivity.this,RouteActivity.class));
             }
         });
+        weatherView=findViewById(R.id.home_app_weather);
+        weatherView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, WeatherActivity.class));
+            }
+        });
+
         showAllClocks=findViewById(R.id.show_more_clock);
         showAllClocks.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showClocksBottomSheet();
+            }
+        });
+        teamView=findViewById(R.id.home_app_team);
+        teamView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this,TeamActivity.class));
+            }
+        });
+        navPortrait=homeNavi.getHeaderView(0).findViewById(R.id.nav_portrait);
+        //Glide.with(this).asGif().load(R.raw.xiaohei).into(navPortrait);
+        navPortrait.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (AccountState.isLogin){
+                    FriendDetailActivity.startDetailActivity(MainActivity.this,AccountState.currentAccount);
+                }else{
+                    startActivityForResult(new Intent(MainActivity.this,LoginActivity.class),LOGIN_RC);
+                }
             }
         });
         locationClient=new LocationClient(this);
@@ -432,6 +464,9 @@ public class MainActivity extends BaseAppCompatActivity {
             case SETTINGS_RC:
                 updateNoteList();
                 updateClockList();
+                break;
+            case LOGIN_RC:
+                //do update user info process
                 break;
         }
     }

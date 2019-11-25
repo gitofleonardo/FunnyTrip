@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.home.TipsActivity"
+    android:orientation="vertical">
+    <androidx.appcompat.widget.Toolbar
+        android:layout_gravity="top"
+        android:background="@color/white"
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/toolbar_height">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <ProgressBar
+                android:id="@+id/progress"
+                android:progressTint="@color/ThemeBlue"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_gravity="center|top"
+                android:max="100"
+                android:progress="50" />
+            <ImageView
+                android:id="@+id/back"
+                android:src="@drawable/back"
+                android:layout_gravity="center|left"
+                android:layout_width="@dimen/toolbar_back_size"
+                android:layout_height="@dimen/toolbar_back_size"/>
+            <EditText
+                android:paddingRight="5dp"
+                android:id="@+id/search"
+                android:layout_width="250dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_margin="10dp"
+                android:background="@drawable/search_bar_bg"
+                android:enabled="false"
+                android:hint="@string/search_tips"
+                android:inputType="none"
+                android:maxLines="1"
+                android:paddingLeft="10dp"
+                android:singleLine="true"
+                android:textAllCaps="false"
+                android:textSize="18dp" />
+            <ImageView
+                android:id="@+id/info"
+                android:src="@drawable/info"
+                android:layout_marginRight="20dp"
+                android:layout_gravity="center|right"
+                android:layout_width="@dimen/toolbar_back_size"
+                android:layout_height="@dimen/toolbar_back_size"/>
+        </FrameLayout>
+    </androidx.appcompat.widget.Toolbar>
+    <WebView
+        android:layout_marginTop="@dimen/toolbar_height"
+        android:id="@+id/web"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
