@@ -11,14 +11,22 @@ public class MomentItem {
     private long time;
     private String content;
     private String imgUrl;
+    private String portraitUrl;
+    private int likeCount;
 
-    public MomentItem(String momentId,String senderId,String name,long time,String content,String imgUrl){
+    public MomentItem(String momentId,String senderId,String name,long time,String content,String imgUrl,String portraitUrl,int likeCount){
         this.content=content;
         this.momentId=momentId;
         this.name=name;
         this.time=time;
         this.senderId=senderId;
         this.imgUrl=imgUrl;
+        this.portraitUrl=portraitUrl;
+        this.likeCount=likeCount;
+    }
+
+    public int getLikeCount() {
+        return likeCount;
     }
 
     public String getName() {
@@ -60,5 +68,13 @@ public class MomentItem {
             SimpleDateFormat sdf=new SimpleDateFormat("hh:mm");
             return sdf.format(then);
         }
+    }
+
+    public void setLikeCount(int likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public String getPortraitUrl() {
+        return portraitUrl;
     }
 }

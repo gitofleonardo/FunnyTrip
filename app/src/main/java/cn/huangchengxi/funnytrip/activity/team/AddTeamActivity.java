@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.ArrayList;
@@ -106,6 +107,7 @@ public class AddTeamActivity extends AppCompatActivity {
         bottomSheetSrl=view.findViewById(R.id.bottom_sheet_srl);
         bottomSheetSrl.setRefreshing(true);
         bsd.setContentView(view);
+        bsd.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
         bsd.show();
     }
     private boolean containsFriend(String id){

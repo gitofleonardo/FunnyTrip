@@ -37,7 +37,7 @@ public class WeatherActivity extends AppCompatActivity {
     private EditText searchBar;
     private ImageView info;
     private WebView webView;
-    private String currentUrl="http://tianqi.moji.com";
+    private String currentUrl="https://xw.tianqi.qq.com";
     private ProgressBar progressBar;
 
     @Override
@@ -67,7 +67,7 @@ public class WeatherActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 AlertDialog.Builder builder=new AlertDialog.Builder(WeatherActivity.this);
-                builder.setTitle("数据来源").setMessage("墨迹天气").setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                builder.setTitle("数据来源").setMessage("腾讯天气").setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.dismiss();

@@ -11,7 +11,7 @@ import android.view.View;
 import android.widget.ImageView;
 
 import cn.huangchengxi.funnytrip.R;
-import cn.huangchengxi.funnytrip.utils.setting.ApplicationSetting;
+import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import cn.huangchengxi.funnytrip.view.OptionView;
 
@@ -22,11 +22,14 @@ public class SettingActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private String[] maxCounts={"1","2","3","4","5"};
 
+    private MainApplication app;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
         init();
+        app=(MainApplication)getApplicationContext();
     }
     private void init(){
         toolbar=findViewById(R.id.toolbar);
@@ -50,7 +53,7 @@ public class SettingActivity extends AppCompatActivity {
                         SqliteHelper helper=new SqliteHelper(SettingActivity.this,"settings",null,1);
                         SQLiteDatabase db=helper.getWritableDatabase();
                         db.execSQL("update settings set max_clock="+Integer.parseInt(maxCounts[which]));
-                        ApplicationSetting.MAX_CLOCK_COUNT=Integer.parseInt(maxCounts[which]);
+                        app.setMAX_CLOCK_COUNT(Integer.parseInt(maxCounts[which]));
                     }
                 }).show();
             }
@@ -65,7 +68,7 @@ public class SettingActivity extends AppCompatActivity {
                         SqliteHelper helper=new SqliteHelper(SettingActivity.this,"settings",null,1);
                         SQLiteDatabase db=helper.getWritableDatabase();
                         db.execSQL("update settings set max_note="+Integer.parseInt(maxCounts[which]));
-                        ApplicationSetting.MAX_NOTE_COUNT=Integer.parseInt(maxCounts[which]);
+                        app.setMAX_NOTE_COUNT(Integer.parseInt(maxCounts[which]));
                     }
                 }).show();
             }

@@ -1,24 +1,31 @@
 package cn.huangchengxi.funnytrip.adapter;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.item.MessageItem;
+import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.viewholder.MessageRVHolder;
 
 public class MesssageRVAdapter extends RecyclerView.Adapter<MessageRVHolder> {
     private List<MessageItem> list;
     private OnMessageClick onMessageClick;
+    private Context context;
 
-    public MesssageRVAdapter() {
-        list=new ArrayList<>();
+    public MesssageRVAdapter(Context context,List<MessageItem> list) {
+        this.list=list;
+        this.context=context;
     }
 
     @NonNull
@@ -42,22 +49,22 @@ public class MesssageRVAdapter extends RecyclerView.Adapter<MessageRVHolder> {
                 }
             }
         });
+        if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
+            Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
+        }else{
+            holder.portrait.setImageResource(R.drawable.portrait);
+        }
     }
 
     @Override
     public int getItemCount() {
         return list.size();
     }
-    public void add(MessageItem item){
-        list.add(item);
-        notifyDataSetChanged();
-    }
-
     public void setOnMessageClick(OnMessageClick onMessageClick) {
         this.onMessageClick = onMessageClick;
     }
 
     public interface OnMessageClick{
-        public void onClick(int pos,View view);
+        void onClick(int pos,View view);
     }
 }

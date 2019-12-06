@@ -1,5 +1,6 @@
 package cn.huangchengxi.funnytrip.adapter;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,14 +8,18 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.item.ChatMessageItem;
+import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.viewholder.ChatRVHolder;
 
 public class ChatRVAdapter extends RecyclerView.Adapter<ChatRVHolder> {
     private List<ChatMessageItem> list;
+    private Context context;
     private OnPortraitClick onPortraitClick;
 
     @NonNull
@@ -26,7 +31,7 @@ public class ChatRVAdapter extends RecyclerView.Adapter<ChatRVHolder> {
     @Override
     public void onBindViewHolder(@NonNull ChatRVHolder holder, final int position) {
         ChatMessageItem item=list.get(position);
-        if (item.isRecieved()){
+        if (item.isReceived()){
             holder.leftLayout.setVisibility(View.VISIBLE);
             holder.rightLayout.setVisibility(View.GONE);
             holder.leftText.setText(item.getContent());
@@ -38,6 +43,11 @@ public class ChatRVAdapter extends RecyclerView.Adapter<ChatRVHolder> {
                     }
                 }
             });
+            if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
+                Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.leftPortrait);
+            }else{
+                holder.leftPortrait.setImageResource(R.drawable.portrait);
+            }
         }else{
             holder.leftLayout.setVisibility(View.GONE);
             holder.rightLayout.setVisibility(View.VISIBLE);
@@ -50,6 +60,11 @@ public class ChatRVAdapter extends RecyclerView.Adapter<ChatRVHolder> {
                     }
                 }
             });
+            if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
+                Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.rightPortrait);
+            }else{
+                holder.rightPortrait.setImageResource(R.drawable.portrait);
+            }
         }
     }
 
@@ -58,8 +73,9 @@ public class ChatRVAdapter extends RecyclerView.Adapter<ChatRVHolder> {
         return list.size();
     }
 
-    public ChatRVAdapter(List<ChatMessageItem> items) {
+    public ChatRVAdapter(Context context,List<ChatMessageItem> items) {
         this.list=items;
+        this.context=context;
     }
     public interface OnPortraitClick{
         void onClick(View view,int position);

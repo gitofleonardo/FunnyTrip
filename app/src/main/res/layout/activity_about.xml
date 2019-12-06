@@ -28,7 +28,7 @@
                 android:layout_height="wrap_content"/>
         </FrameLayout>
     </androidx.appcompat.widget.Toolbar>
-    <androidx.core.widget.NestedScrollView
+    <cn.huangchengxi.funnytrip.view.OverNestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -67,5 +67,5 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </cn.huangchengxi.funnytrip.view.OverNestedScrollView>
 </LinearLayout>

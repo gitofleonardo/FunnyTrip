@@ -27,6 +27,13 @@
                 android:layout_gravity="center"
                 android:layout_width="200dp"
                 android:layout_height="match_parent"/>
+            <ImageView
+                android:layout_marginRight="20dp"
+                android:layout_gravity="center|right"
+                android:src="@drawable/add"
+                android:id="@+id/add_moment"
+                android:layout_width="@dimen/toolbar_back_size"
+                android:layout_height="@dimen/toolbar_back_size"/>
         </FrameLayout>
     </androidx.appcompat.widget.Toolbar>
     <androidx.viewpager.widget.ViewPager

@@ -53,6 +53,18 @@ public class MessageItem {
         }
     }
 
+    public void setPortraitUrl(String portraitUrl) {
+        this.portraitUrl = portraitUrl;
+    }
+
+    public void setHisName(String hisName) {
+        this.hisName = hisName;
+    }
+
+    public void setLatestContent(String latestContent) {
+        this.latestContent = latestContent;
+    }
+
     public String getPortraitUrl() {
         return portraitUrl;
     }

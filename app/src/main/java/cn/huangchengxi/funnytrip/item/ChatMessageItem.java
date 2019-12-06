@@ -7,16 +7,16 @@ import java.util.Date;
 public class ChatMessageItem {
     private String content;
     private String userId;
-    private String msgId;
+    private String portraitUrl;
     private long time;
-    private boolean isRecieved;
+    private boolean isReceived;
 
-    public ChatMessageItem(String content,String userId,String msgId,long time,boolean isRecieved){
+    public ChatMessageItem(String content,String userId,String portraitUrl,long time,boolean isReceived){
         this.content=content;
         this.userId=userId;
         this.time=time;
-        this.msgId=msgId;
-        this.isRecieved=isRecieved;
+        this.isReceived=isReceived;
+        this.portraitUrl=portraitUrl;
     }
 
     public String getContent() {
@@ -25,10 +25,6 @@ public class ChatMessageItem {
 
     public long getTime() {
         return time;
-    }
-
-    public String getMsgId() {
-        return msgId;
     }
 
     public String getUserId() {
@@ -51,7 +47,16 @@ public class ChatMessageItem {
             return sdf.format(then);
         }
     }
-    public boolean isRecieved() {
-        return isRecieved;
+
+    public String getPortraitUrl() {
+        return portraitUrl;
+    }
+
+    public void setPortraitUrl(String portraitUrl) {
+        this.portraitUrl = portraitUrl;
+    }
+
+    public boolean isReceived() {
+        return isReceived;
     }
 }

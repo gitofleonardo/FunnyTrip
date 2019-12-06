@@ -8,6 +8,7 @@
     <group>
         <item android:title="设置" android:id="@+id/setting"></item>
         <item android:title="关于" android:id="@+id/about"></item>
+        <item android:title="注销" android:id="@+id/logout"></item>
     </group>
     <group>
         <item android:title="@string/contact_me" android:id="@+id/contact_us"></item>

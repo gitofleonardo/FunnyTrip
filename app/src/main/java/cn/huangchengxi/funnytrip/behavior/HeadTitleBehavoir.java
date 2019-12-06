@@ -39,6 +39,8 @@ public class HeadTitleBehavoir extends CoordinatorLayout.Behavior<TextView> {
         }
         stableY=percent<0.3f?0.3f*oldY:percent*oldY;
         stableX=percent<0.3f?0.3f*oldX:percent*oldX;
+        //stableX=percent*oldX;
+        //stableY=percent*oldY;
         //child.setX(stableX);
         child.setY(stableY);
         child.setScaleX(percent<minPercent?minPercent:percent);

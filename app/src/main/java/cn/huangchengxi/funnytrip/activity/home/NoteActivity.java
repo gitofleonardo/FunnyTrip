@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -25,11 +27,16 @@ import java.util.Date;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.item.NoteItem;
+import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 
 public class NoteActivity extends AppCompatActivity {
     public static final int INSERT_OR_UPDATE_SUCCESS=0;
     public static final int INSERT_OR_UPDATE_FAILED=1;
+
+    private final int CONNECTION_FAILED=2;
+    private final int DELETE_SUCCESS=3;
+    private final int COMMIT_SUCCESS=4;
 
     private Toolbar toolbar;
     private ImageView back;
@@ -38,6 +45,9 @@ public class NoteActivity extends AppCompatActivity {
     private TextView tip;
     private NoteItem note;
     private FloatingActionButton deleteButton;
+    private MyHandler myHandler=new MyHandler();
+
+    private AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +70,12 @@ public class NoteActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (!content.getText().toString().equals("") && content.getText().toString().length()<=180){
-                    saveToLocalDatabaseAndCloud(content.getText().toString());
-                    finish();
+                    if (note!=null){
+                        updateNote(content.getText().toString(),note.getId());
+                    }else{
+                        dialog=new AlertDialog.Builder(NoteActivity.this).setTitle("正在保存").setView(R.layout.view_processing_dialog).setCancelable(false).show();
+                        commitNote(content.getText().toString());
+                    }
                 }
             }
         });
@@ -90,8 +104,9 @@ public class NoteActivity extends AppCompatActivity {
         });
         long time=getIntent().getLongExtra("time",0);
         String fromContent=getIntent().getStringExtra("content");
+        String noteID=getIntent().getStringExtra("note_id");
         if (fromContent!=null){
-            note=new NoteItem(time,fromContent);
+            note=new NoteItem(noteID,time,fromContent);
             content.setText(fromContent);
         }
         deleteButton=findViewById(R.id.delete);
@@ -106,12 +121,8 @@ public class NoteActivity extends AppCompatActivity {
                     builder.setTitle("确定删除").setPositiveButton("确定", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            SqliteHelper helper=new SqliteHelper(NoteActivity.this,"notes",null,1);
-                            SQLiteDatabase db=helper.getWritableDatabase();
-                            db.execSQL("delete from notes where note_time="+note.getTime());
-                            Toast.makeText(NoteActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
-                            setResult(INSERT_OR_UPDATE_SUCCESS);
-                            finish();
+                            NoteActivity.this.dialog=new AlertDialog.Builder(NoteActivity.this).setTitle("正在删除").setView(R.layout.view_processing_dialog).setCancelable(false).show();
+                            deleteNote(note.getId());
                         }
                     }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
                         @Override
@@ -125,26 +136,83 @@ public class NoteActivity extends AppCompatActivity {
             });
         }
     }
-    private void saveToLocalDatabaseAndCloud(String content){
-        SqliteHelper helper=new SqliteHelper(this,"notes",null,1);
-        SQLiteDatabase db=helper.getWritableDatabase();
-        if (note==null){
-            Date now=new Date();
-            db.execSQL("insert into notes values("+now.getTime()+",\""+content+"\")");
-            Log.e("insert","insert");
-        }else{
-            db.execSQL("update notes set content=\""+content+"\" where note_time="+note.getTime());
-            Log.e("update","update");
-        }
-        //do upload-to-cloud process
+    private void updateNote(String content,String id){
+        HttpHelper.updateNote(content, id,this, new HttpHelper.OnCommonResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_FAILED);
+            }
 
-        setResult(INSERT_OR_UPDATE_SUCCESS);
+            @Override
+            public void onReturnSuccess() {
+                sendMessage(COMMIT_SUCCESS);
+            }
+        });
+    }
+    private void deleteNote(String id){
+        HttpHelper.deleteNote(id, this, new HttpHelper.OnCommonResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_FAILED);
+            }
+
+            @Override
+            public void onReturnSuccess() {
+                sendMessage(DELETE_SUCCESS);
+            }
+        });
+    }
+    private void commitNote(String content){
+        HttpHelper.commitNote(content, this, new HttpHelper.OnCommonResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_FAILED);
+            }
+
+            @Override
+            public void onReturnSuccess() {
+                sendMessage(COMMIT_SUCCESS);
+            }
+        });
+    }
+    private void sendMessage(int what){
+        Message msg=myHandler.obtainMessage();
+        msg.what=what;
+        myHandler.sendMessage(msg);
+    }
+    private class MyHandler extends Handler{
+        @Override
+        public void handleMessage(Message msg) {
+            try {
+                switch (msg.what){
+                    case CONNECTION_FAILED:
+                        Toast.makeText(NoteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                        break;
+                    case COMMIT_SUCCESS:
+                        if (dialog!=null){
+                            dialog.dismiss();
+                        }
+                        Toast.makeText(NoteActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+                        setResult(INSERT_OR_UPDATE_SUCCESS,new Intent());
+                        finish();
+                        break;
+                    case DELETE_SUCCESS:
+                        if (dialog!=null){
+                            dialog.dismiss();
+                        }
+                        setResult(INSERT_OR_UPDATE_SUCCESS,new Intent());
+                        finish();
+                        break;
+                }
+            }catch (Exception e){}
+        }
     }
     public static void startNoteActivityForResult(Context context,int requestCode,NoteItem note){
         Intent intent=new Intent(context,NoteActivity.class);
         if (note!=null){
             intent.putExtra("time",note.getTime());
             intent.putExtra("content",note.getContent());
+            intent.putExtra("note_id",note.getId());
         }
         ((AppCompatActivity)context).startActivityForResult(intent,requestCode);
     }

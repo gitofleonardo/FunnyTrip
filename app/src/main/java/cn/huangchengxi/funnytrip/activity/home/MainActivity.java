@@ -1,15 +1,21 @@
 package cn.huangchengxi.funnytrip.activity.home;
 
+import android.app.Service;
+import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.ScaleAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -31,18 +37,24 @@ import com.baidu.location.BDLocation;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationView;
 
+import org.java_websocket.client.WebSocketClient;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
-import cn.huangchengxi.funnytrip.activity.account.MyHomepageActivity;
+import cn.huangchengxi.funnytrip.activity.account.ChangePasswordActivity;
 import cn.huangchengxi.funnytrip.activity.friend.FriendDetailActivity;
+import cn.huangchengxi.funnytrip.activity.service.WebSocketMessageService;
 import cn.huangchengxi.funnytrip.activity.weather.WeatherActivity;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
 import cn.huangchengxi.funnytrip.activity.clock.BottomClocksCallback;
@@ -53,12 +65,14 @@ import cn.huangchengxi.funnytrip.activity.navigation.SettingActivity;
 import cn.huangchengxi.funnytrip.activity.note.MyNoteActivity;
 import cn.huangchengxi.funnytrip.adapter.ClockListAdapter;
 import cn.huangchengxi.funnytrip.adapter.NoteAdapter;
+import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.databean.ClocksResultBean;
+import cn.huangchengxi.funnytrip.databean.NotesResultBean;
+import cn.huangchengxi.funnytrip.databean.UserInformationBean;
 import cn.huangchengxi.funnytrip.item.ClockItem;
 import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.item.WeatherNow;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
-import cn.huangchengxi.funnytrip.utils.setting.AccountState;
-import cn.huangchengxi.funnytrip.utils.setting.ApplicationSetting;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import cn.huangchengxi.funnytrip.view.HomeAppView;
 import cn.huangchengxi.funnytrip.viewholder.ClockListHolder;
@@ -102,6 +116,7 @@ public class MainActivity extends BaseAppCompatActivity {
     private HomeAppView weatherView;
     private HomeAppView teamView;
     private ImageView navPortrait;
+    private TextView userName;
 
     private final int WEATHER_OK=0;
     private final int WEATHER_FAIL=1;
@@ -112,21 +127,41 @@ public class MainActivity extends BaseAppCompatActivity {
     private final int NOTE_RC=2;
     private final int SETTINGS_RC=3;
     private final int LOGIN_RC=4;
+    private final int CHANGE_PASSWORD_RC=5;
+    private final int ACCOUNT_SEC_RC=6;
+
+    private final int FETCH_MY_INFORMATION_FAILED=7;
+    private final int FETCH_MY_INFORMATION_SUCCESS=8;
+    private final int CONNECTION_ERROR=9;
+    private final int NOT_LOGIN=10;
+
+    private final int FETCH_CLOCKS_SUCCESS=11;
+    private final int FETCH_CLOCKS_FOR_BOTTOM_SHEET_SUCCESS=12;
+    private final int CLOCK_DELETE_FAILED=13;
+    private final int CLOCK_DELETE_SUCCESS=14;
+    private final int FETCH_NOTES_SUCCESS=15;
+
+    private String nickname;
+    private String portrait_url;
+
+    private MainApplication app;
 
     private MyHandler myHandler=new MyHandler();
+    private ClockListAdapter cla;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         transparentStatusBar(this);
+        app=(MainApplication)getApplicationContext();
         init();
     }
     private void init(){
         clockListView=findViewById(R.id.clock_list);
         clockListAdapter=new ClockListAdapter(false);
-        for (int i=0;i<ApplicationSetting.clocks.size();i++){
-            clockListAdapter.add(ApplicationSetting.clocks.get(i));
+        for (int i=0;i<MainApplication.clocks.size();i++){
+            clockListAdapter.add(MainApplication.clocks.get(i));
         }
         clockListView.setAdapter(clockListAdapter);
         clockListView.setLayoutManager(new LinearLayoutManager(this));
@@ -166,8 +201,8 @@ public class MainActivity extends BaseAppCompatActivity {
 
         noteRv=findViewById(R.id.home_note_rv);
         noteAdapter=new NoteAdapter();
-        for (int i=0;i<ApplicationSetting.notes.size();i++){
-            noteAdapter.add(ApplicationSetting.notes.get(i));
+        for (int i=0;i<MainApplication.notes.size();i++){
+            noteAdapter.add(MainApplication.notes.get(i));
         }
         noteAdapter.setOnNoteClickListener(new NoteAdapter.OnNoteClickListener() {
             @Override
@@ -223,7 +258,7 @@ public class MainActivity extends BaseAppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()){
                     case R.id.account_sec:
-                        startActivity(new Intent(MainActivity.this, AccountSecurityActivity.class));
+                        startActivityForResult(new Intent(MainActivity.this, AccountSecurityActivity.class),ACCOUNT_SEC_RC);
                         break;
                     case R.id.account_info:
                         startActivity(new Intent(MainActivity.this, AccountInfoActivity.class));
@@ -247,6 +282,10 @@ public class MainActivity extends BaseAppCompatActivity {
                     case R.id.weather:
                         startActivityForResult(new Intent(MainActivity.this,WeatherPicker.class),WEATHER_RC);
                         break;
+                    case R.id.logout:
+                        startActivity(new Intent(MainActivity.this,LoginActivity.class));
+                        finish();
+                        break;
                 }
                 return true;
             }
@@ -257,8 +296,8 @@ public class MainActivity extends BaseAppCompatActivity {
         weather.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (ApplicationSetting.WEATHER_ID!=null){
-                    updateWeather(ApplicationSetting.WEATHER_ID);
+                if (app.getWEATHER_ID()!=null){
+                    updateWeather(app.getWEATHER_ID());
                 }else{
                     Intent intent=new Intent(MainActivity.this,WeatherPicker.class);
                     startActivityForResult(intent,WEATHER_RC);
@@ -302,17 +341,19 @@ public class MainActivity extends BaseAppCompatActivity {
             }
         });
         navPortrait=homeNavi.getHeaderView(0).findViewById(R.id.nav_portrait);
-        //Glide.with(this).asGif().load(R.raw.xiaohei).into(navPortrait);
         navPortrait.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (AccountState.isLogin){
-                    FriendDetailActivity.startDetailActivity(MainActivity.this,AccountState.currentAccount);
+                //Log.e("logined",app.getJSESSIONID());
+                if (app.isLogin()){
+                    FriendDetailActivity.startDetailActivity(MainActivity.this,app.getUID());
                 }else{
                     startActivityForResult(new Intent(MainActivity.this,LoginActivity.class),LOGIN_RC);
                 }
             }
         });
+        userName=homeNavi.getHeaderView(0).findViewById(R.id.home_nav_user_name);
+        userName.setText(((MainApplication)getApplicationContext()).getUID());
         locationClient=new LocationClient(this);
         locationFetcher=new LocationFetcher();
         locationClient.registerLocationListener(locationFetcher);
@@ -330,12 +371,15 @@ public class MainActivity extends BaseAppCompatActivity {
         locationClient.start();
 
         fetchWeather();
+        fetchMyInformation();
+        fetchClocks(new Date().getTime(),true);
+        fetchNotes(new Date().getTime());
     }
     private void showClocksBottomSheet(){
         final View view=View.inflate(this,R.layout.view_my_clock_all,null);
         RecyclerView rv=view.findViewById(R.id.bottom_clock_rv);
         rv.setItemAnimator(new DefaultItemAnimator());
-        final ClockListAdapter cla=new ClockListAdapter(true);
+        cla=new ClockListAdapter(true);
         ItemTouchHelper.Callback callback=new BottomClocksCallback(cla);
         final ItemTouchHelper helper=new ItemTouchHelper(callback);
         cla.setOnSwipeListener(new ClockListAdapter.OnSwipeListener() {
@@ -348,14 +392,22 @@ public class MainActivity extends BaseAppCompatActivity {
         cla.setOnItemDelete(new ClockListAdapter.OnItemDelete() {
             @Override
             public void onDelete(String clockId) {
-                SqliteHelper helper=new SqliteHelper(MainActivity.this,"clocks",null,1);
-                SQLiteDatabase db=helper.getWritableDatabase();
-                db.execSQL("delete from clocks where clock_time="+clockId);
-                updateClockList();
+                deleteClock(clockId);
             }
         });
         rv.setAdapter(cla);
-        rv.setLayoutManager(new LinearLayoutManager(this));
+        final LinearLayoutManager linearLayoutManager=new LinearLayoutManager(this);
+        rv.setLayoutManager(linearLayoutManager);
+        rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                if (newState==RecyclerView.SCROLL_STATE_IDLE){
+                    if (linearLayoutManager.findLastCompletelyVisibleItemPosition()==cla.getItemCount()-1){
+                        fetchClocksForBottomSheet(cla.getItemCount()==0?new Date().getTime():cla.getClockItem(cla.getItemCount()-1).getTime(),false);
+                    }
+                }
+            }
+        });
         final BottomSheetDialog bsd=new BottomSheetDialog(this);
         bsd.setContentView(view);
         ImageView back=view.findViewById(R.id.collapse);
@@ -366,42 +418,206 @@ public class MainActivity extends BaseAppCompatActivity {
             }
         });
         //load data
-        SqliteHelper dbhelper=new SqliteHelper(MainActivity.this,"clocks",null,1);
-        SQLiteDatabase db=dbhelper.getWritableDatabase();
-        Cursor cursor=db.query("clocks",null,null,null,null,null,null);
-        if (cursor.moveToFirst()){
-            do{
-                long time=cursor.getLong(cursor.getColumnIndex("clock_time"));
-                String location=cursor.getString(cursor.getColumnIndex("location"));
-                ClockItem item=new ClockItem(String.valueOf(time),location,time);
-                cla.add(item);
-            }while(cursor.moveToNext());
-        }
+        bsd.getBehavior().setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+
+            }
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                if (slideOffset >= 0) {
+                    float scale=1.0f-slideOffset*0.1f;
+                    homeView.setScaleX(scale);
+                    homeView.setScaleY(scale);
+                }else if (slideOffset==-1.0f){
+                    bsd.dismiss();
+                }
+            }
+        });
+        bsd.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                /*
+                ScaleAnimation animation=new ScaleAnimation(0.9f,1.0f,0.9f,0.9f);
+                homeView.setAnimation(animation);
+                animation.start();
+
+                 */
+                homeView.setScaleX(1);
+                homeView.setScaleY(1);
+            }
+        });
+        bsd.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialogInterface) {
+                /*
+                ScaleAnimation animation=new ScaleAnimation(0.9f,1.0f,0.9f,0.9f);
+                homeView.setAnimation(animation);
+                animation.start();
+
+                 */
+                homeView.setScaleX(1);
+                homeView.setScaleY(1);
+            }
+        });
         bsd.show();
+        fetchClocksForBottomSheet(new Date().getTime(),true);
+    }
+    private void deleteClock(String id){
+        String uid=((MainApplication)getApplicationContext()).getUID();
+        HttpHelper.deleteClock(uid, id, this, new HttpHelper.OnCommonResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CLOCK_DELETE_FAILED);
+            }
+            @Override
+            public void onReturnSuccess() {
+                sendMessage(CLOCK_DELETE_SUCCESS);
+            }
+        });
+    }
+    private void fetchClocksForBottomSheet(long timeLimit,final boolean removed){
+        String uid=((MainApplication)getApplicationContext()).getUID();
+        HttpHelper.fetchClocks(uid, timeLimit, this, new HttpHelper.OnClocksResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_ERROR);
+            }
+            @Override
+            public void onReturnSuccess(ClocksResultBean bean) {
+                Message m=myHandler.obtainMessage();
+                m.what=FETCH_CLOCKS_FOR_BOTTOM_SHEET_SUCCESS;
+                m.obj=bean;
+                m.arg1=removed?1:0;
+                myHandler.sendMessage(m);
+            }
+        });
+    }
+    private void fetchClocks(long timeLimit, final boolean removed){
+        String uid=((MainApplication)getApplicationContext()).getUID();
+        HttpHelper.fetchClocks(uid, timeLimit, this, new HttpHelper.OnClocksResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_ERROR);
+            }
+            @Override
+            public void onReturnSuccess(ClocksResultBean bean) {
+                Message m=myHandler.obtainMessage();
+                m.what=FETCH_CLOCKS_SUCCESS;
+                m.obj=bean;
+                m.arg1=removed?1:0;
+                myHandler.sendMessage(m);
+            }
+        });
     }
     private void fetchWeather(){
-        if (ApplicationSetting.WEATHER_ID!=null){
-            updateWeather(ApplicationSetting.WEATHER_ID);
+        if (app.getWEATHER_ID()!=null){
+            updateWeather(app.getWEATHER_ID());
         }
+    }
+    private void fetchMyInformation(){
+        String uid=((MainApplication)getApplicationContext()).getUID();
+        HttpHelper.fetchMyInformation(uid, this, new HttpHelper.OnFetchUserInformation() {
+            @Override
+            public void onReturnSuccess(UserInformationBean bean) {
+                portrait_url=bean.getPortraitUrl();
+                nickname=bean.getNickname();
+                ((MainApplication)getApplicationContext()).setPortraitUrl(portrait_url);
+                sendMessage(FETCH_MY_INFORMATION_SUCCESS);
+            }
+            @Override
+            public void onReturnFail() {
+                sendMessage(CONNECTION_ERROR);
+            }
+        });
+    }
+    private void fetchNotes(long timeLimit){
+        HttpHelper.fetchNotes(timeLimit, this, new HttpHelper.OnNotesResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_ERROR);
+            }
+            @Override
+            public void onReturnSuccess(NotesResultBean bean) {
+                Message msg=myHandler.obtainMessage();
+                msg.what=FETCH_NOTES_SUCCESS;
+                msg.obj=bean;
+                myHandler.sendMessage(msg);
+            }
+        });
+    }
+    private void sendMessage(int what){
+        Message msg=myHandler.obtainMessage();
+        msg.what=what;
+        myHandler.sendMessage(msg);
     }
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(@NonNull Message msg) {
-            switch (msg.what){
-                case WEATHER_OK:
-                    if (refreshImg.getVisibility()==View.VISIBLE){
-                        refreshImg.setVisibility(View.INVISIBLE);
-                    }
-                    //handle data here
-                    weather_des.setText(weatherDes);
-                    break;
-                case WEATHER_FAIL:
-                    Toast.makeText(MainActivity.this, "获取数据失败", Toast.LENGTH_SHORT).show();
-                    if (refreshImg.getVisibility()==View.VISIBLE){
-                        refreshImg.setVisibility(View.INVISIBLE);
-                    }
-                    break;
-            }
+            try {
+                switch (msg.what){
+                    case WEATHER_OK:
+                        if (refreshImg.getVisibility()==View.VISIBLE){
+                            refreshImg.setVisibility(View.INVISIBLE);
+                        }
+                        //handle data here
+                        weather_des.setText(weatherDes);
+                        break;
+                    case WEATHER_FAIL:
+                        Toast.makeText(MainActivity.this, "获取数据失败", Toast.LENGTH_SHORT).show();
+                        if (refreshImg.getVisibility()==View.VISIBLE){
+                            refreshImg.setVisibility(View.INVISIBLE);
+                        }
+                        break;
+                    case FETCH_MY_INFORMATION_FAILED:
+                        Toast.makeText(MainActivity.this, "获取用户信息失败", Toast.LENGTH_SHORT).show();
+                        break;
+                    case FETCH_MY_INFORMATION_SUCCESS:
+                        if (portrait_url!=null && !portrait_url.equals("") && !portrait_url.equals("null")){
+                            Glide.with(MainActivity.this).load(HttpHelper.SERVER_HOST+portrait_url).into(navPortrait);
+                        }
+                        if (nickname!=null && !nickname.equals("null") && !nickname.equals("")){
+                            userName.setText(nickname);
+                        }
+                        break;
+                    case FETCH_CLOCKS_SUCCESS:
+                        List<ClockItem> list=((ClocksResultBean)msg.obj).getList();
+                        boolean removed=msg.arg1==1?true:false;
+                        if (removed){
+                            clockListAdapter.clear();
+                        }
+                        for (int i=0;i<list.size() && i<((MainApplication)getApplicationContext()).getMAX_CLOCK_COUNT();i++){
+                            clockListAdapter.add(list.get(i));
+                        }
+                        break;
+                    case FETCH_CLOCKS_FOR_BOTTOM_SHEET_SUCCESS:
+                        if (cla!=null){
+                            List<ClockItem> lists=((ClocksResultBean)msg.obj).getList();
+                            boolean remove=msg.arg1==1?true:false;
+                            if (remove){
+                                cla.clear();
+                            }
+                            for (int i=0;i<lists.size();i++){
+                                cla.add(lists.get(i));
+                            }
+                        }
+                        break;
+                    case CLOCK_DELETE_FAILED:
+                        Toast.makeText(MainActivity.this    , "删除失败", Toast.LENGTH_SHORT).show();
+                        fetchClocksForBottomSheet(new Date().getTime(),true);
+                        break;
+                    case CLOCK_DELETE_SUCCESS:
+                        fetchClocks(new Date().getTime(),true);
+                        break;
+                    case FETCH_NOTES_SUCCESS:
+                        NotesResultBean bean=(NotesResultBean)msg.obj;
+                        noteAdapter.clear();
+                        for (int i=0;i<bean.getList().size() && i<((MainApplication)getApplicationContext()).getMAX_NOTE_COUNT();i++){
+                            noteAdapter.add(bean.getList().get(i));
+                        }
+                        break;
+                }
+            }catch (Exception e){}
         }
     }
     private class LocationFetcher extends BDAbstractLocationListener{
@@ -456,52 +672,27 @@ public class MainActivity extends BaseAppCompatActivity {
                 }
                 break;
             case NOTE_RC:
-                updateNoteList();
+                fetchNotes(new Date().getTime());
                 break;
             case CLOCK_RC:
-                updateClockList();
+                //updateClockList();
+                fetchClocks(new Date().getTime(),true);
                 break;
             case SETTINGS_RC:
-                updateNoteList();
-                updateClockList();
+                fetchNotes(new Date().getTime());
+                fetchClocks(new Date().getTime(),true);
+                //updateClockList();
                 break;
             case LOGIN_RC:
                 //do update user info process
                 break;
-        }
-    }
-    private void updateClockList(){
-        SqliteHelper helper=new SqliteHelper(this,"clocks",null,1);
-        SQLiteDatabase db=helper.getWritableDatabase();
-        Cursor cursor=db.query("clocks",null,null,null,null,null,null);
-        ApplicationSetting.clocks.clear();
-        clockListAdapter.clear();
-        if (cursor.moveToFirst()){
-            int i=0;
-            do{
-                long time=cursor.getLong(cursor.getColumnIndex("clock_time"));
-                String location=cursor.getString(cursor.getColumnIndex("location"));
-                ClockItem item=new ClockItem(String.valueOf(time),location,time);
-                ApplicationSetting.clocks.add(item);
-                clockListAdapter.add(item);
-            }while(cursor.moveToNext() && ++i<ApplicationSetting.MAX_CLOCK_COUNT);
-        }
-    }
-    private void updateNoteList(){
-        SqliteHelper helper=new SqliteHelper(this,"notes",null,1);
-        SQLiteDatabase db=helper.getWritableDatabase();
-        Cursor cursor=db.query("notes",null,null,null,null,null,null);
-        ApplicationSetting.notes.clear();
-        noteAdapter.clear();
-        if (cursor.moveToFirst()){
-            int i=0;
-            do{
-                long time=cursor.getLong(cursor.getColumnIndex("note_time"));
-                String content=cursor.getString(cursor.getColumnIndex("content"));
-                NoteItem item=new NoteItem(time,content);
-                ApplicationSetting.notes.add(item);
-                noteAdapter.add(item);
-            }while(cursor.moveToNext() && ++i<ApplicationSetting.MAX_NOTE_COUNT);
+            case ACCOUNT_SEC_RC:
+                Log.e("result",resultCode+"  "+ChangePasswordActivity.CHANGE_PASSWORD_SUCCESS);
+                if (resultCode== ChangePasswordActivity.CHANGE_PASSWORD_SUCCESS){
+                    startActivity(new Intent(MainActivity.this,LoginActivity.class));
+                    finish();
+                }
+                break;
         }
     }
     private void updateWeather(final String weatherID){
@@ -526,8 +717,8 @@ public class MainActivity extends BaseAppCompatActivity {
                         weatherDes=tmp+"℃"+condText;
                         //update setting
                         WeatherNow weatherNow=new WeatherNow(tmp,condText);
-                        ApplicationSetting.weatherNow=weatherNow;
-                        ApplicationSetting.WEATHER_ID=weatherID;
+                        app.setWeatherNow(weatherNow);
+                        app.setWEATHER_ID(weatherID);
                         //update database for weather id
                         SqliteHelper helper=new SqliteHelper(MainActivity.this,"weather",null,1);
                         SQLiteDatabase db=helper.getWritableDatabase();

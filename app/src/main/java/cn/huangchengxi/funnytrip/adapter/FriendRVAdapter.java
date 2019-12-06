@@ -1,5 +1,6 @@
 package cn.huangchengxi.funnytrip.adapter;
 
+import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,6 +9,8 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,6 +18,7 @@ import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.item.FriendItem;
+import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.NameHelper;
 import cn.huangchengxi.funnytrip.viewholder.FriendRVHolder;
 
@@ -23,11 +27,13 @@ public class FriendRVAdapter extends RecyclerView.Adapter<FriendRVHolder> {
     private List<FriendItem> rvList;
     private HashMap<Character,ArrayList<FriendItem>> map;
     private OnUserClick onUserClick;
+    private Context context;
 
-    public FriendRVAdapter() {
+    public FriendRVAdapter(Context context) {
         list=new ArrayList<>();
         rvList=new ArrayList<>();
         map=new HashMap<>();
+        this.context=context;
     }
 
     @NonNull
@@ -52,6 +58,11 @@ public class FriendRVAdapter extends RecyclerView.Adapter<FriendRVHolder> {
                     }
                 }
             });
+            if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
+                Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
+            }else{
+                holder.portrait.setImageResource(R.drawable.portrait);
+            }
         }else{
             holder.friendItem.setVisibility(View.GONE);
             holder.letter.setVisibility(View.VISIBLE);
@@ -74,6 +85,12 @@ public class FriendRVAdapter extends RecyclerView.Adapter<FriendRVHolder> {
         list.addAll(collection);
         rvList.clear();
         makeList();
+        notifyDataSetChanged();
+    }
+    public void clearAll(){
+        list.clear();
+        rvList.clear();
+        map.clear();
         notifyDataSetChanged();
     }
     private void makeList(){

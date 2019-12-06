@@ -7,6 +7,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -48,10 +50,12 @@ import com.baidu.mapapi.search.sug.OnGetSuggestionResultListener;
 import com.baidu.mapapi.search.sug.SuggestionResult;
 import com.baidu.mapapi.search.sug.SuggestionSearch;
 import com.baidu.mapapi.search.sug.SuggestionSearchOption;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.ObjectStreamClass;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -61,6 +65,8 @@ import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
 import cn.huangchengxi.funnytrip.adapter.BottomPosAdapter;
 import cn.huangchengxi.funnytrip.adapter.SearchResultAdapter;
 import cn.huangchengxi.funnytrip.item.PositionItem;
+import cn.huangchengxi.funnytrip.item.RouteItem;
+import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 
 public class AddRouteActivity extends BaseAppCompatActivity {
@@ -86,9 +92,14 @@ public class AddRouteActivity extends BaseAppCompatActivity {
     private EditText routeName;
     private FloatingActionButton delete;
 
-    private String routeId;
+    private RouteItem routeItem;
 
     private boolean isFromAutoFill=false;
+    private MyHandler myHandler=new MyHandler();
+
+    private final int COMMIT_SUCCESS=0;
+    private final int CONNECTION_FAILED=1;
+    private final int DELETE_SUCCESS=2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,7 +144,8 @@ public class AddRouteActivity extends BaseAppCompatActivity {
                             }
                         }).show();
                     }else{
-                        saveToDatabaseAndCloud(routeName.getText().toString());
+                        //saveToDatabaseAndCloud(routeName.getText().toString());
+                        commitRoutes(routeName.getText().toString());
                         Toast.makeText(AddRouteActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
                         finish();
                     }
@@ -229,30 +241,23 @@ public class AddRouteActivity extends BaseAppCompatActivity {
             setMapCenterTo(new LatLng(latLng.latitude,latLng.longitude));
         }
     }
-    private void saveToDatabaseAndCloud(String name){
-        Date now=new Date();
-        SqliteHelper helper=new SqliteHelper(this,"routes",null,1);
-        SQLiteDatabase db=helper.getWritableDatabase();
-        if (routeId==null){
-            db.execSQL("insert into routes values(\""+name+"\","+now.getTime()+")");
-
-            helper=new SqliteHelper(this,"positions",null,1);
-            db=helper.getWritableDatabase();
-            for (int i=0;i<positionItems.size();i++){
-                PositionItem item=positionItems.get(i);
-                db.execSQL("insert into positions values(\""+item.getName()+"\","+item.getLatitude()+","+item.getLongitude()+","+now.getTime()+","+i+")");
+    private void commitRoutes(String name){
+        String routeID=routeItem==null?"null":routeItem.getRouteId();
+        HttpHelper.commitRoute(name, positionItems,routeID ,this, new HttpHelper.OnCommonResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_FAILED);
             }
-        }else{
-            db.execSQL("update routes set name=\""+name+"\" where route_time="+routeId);
-
-            helper=new SqliteHelper(this,"positions",null,1);
-            db=helper.getWritableDatabase();
-            db.execSQL("delete from positions where route="+routeId);
-            for (int i=0;i<positionItems.size();i++){
-                PositionItem item=positionItems.get(i);
-                db.execSQL("insert into positions values(\""+item.getName()+"\","+item.getLatitude()+","+item.getLongitude()+","+now.getTime()+","+i+")");
+            @Override
+            public void onReturnSuccess() {
+                sendMessage(COMMIT_SUCCESS);
             }
-        }
+        });
+    }
+    private void sendMessage(int what){
+        Message msg=myHandler.obtainMessage();
+        msg.what=what;
+        myHandler.sendMessage(msg);
     }
     private void initSearch(){
         myLocationListener=new MyLocationListener();
@@ -279,18 +284,24 @@ public class AddRouteActivity extends BaseAppCompatActivity {
         InputMethodManager manager=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
         manager.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(),0);
     }
-    private void deleteFromDatabase(){
-        SqliteHelper helper=new SqliteHelper(this,"routes",null,1);
-        SQLiteDatabase db=helper.getWritableDatabase();
-        db.execSQL("delete from routes where route_time="+routeId);
-        helper=new SqliteHelper(this,"positions",null,1);
-        db=helper.getWritableDatabase();
-        db.execSQL("delete from positions where route="+routeId);
+    private void deleteRoute(){
+        HttpHelper.deleteRoute(routeItem.getRouteId(), this, new HttpHelper.OnCommonResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_FAILED);
+            }
+            @Override
+            public void onReturnSuccess() {
+                sendMessage(DELETE_SUCCESS);
+            }
+        });
     }
     private void init(){
-        routeId=getIntent().getStringExtra("route_id");
+        routeItem=(RouteItem) getIntent().getSerializableExtra("route");
         delete=findViewById(R.id.delete);
-        if (routeId!=null){
+        if (routeItem!=null){
+            positionItems.addAll(routeItem.getRoute());
+
             delete.setVisibility(View.VISIBLE);
             delete.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -299,8 +310,7 @@ public class AddRouteActivity extends BaseAppCompatActivity {
                     builder.setTitle("确定删除").setPositiveButton("确定", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            deleteFromDatabase();
-                            finish();
+                            deleteRoute();
                         }
                     }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
                         @Override
@@ -310,16 +320,6 @@ public class AddRouteActivity extends BaseAppCompatActivity {
                     }).show();
                 }
             });
-            //read data from database
-            SqliteHelper helper=new SqliteHelper(this,"positions",null,1);
-            SQLiteDatabase db=helper.getWritableDatabase();
-            Cursor cursor=db.query("positions",null,"route=?",new String[]{routeId},null,null,"pos_index",null);
-            if (cursor.moveToFirst()){
-                do{
-                    PositionItem item=new PositionItem(routeId,cursor.getString(cursor.getColumnIndex("name")),cursor.getDouble(cursor.getColumnIndex("latitude")),cursor.getDouble(cursor.getColumnIndex("longitude")));
-                    positionItems.add(item);
-                }while (cursor.moveToNext());
-            }
         }else{
             delete.setVisibility(View.GONE);
             //do nothing
@@ -384,6 +384,7 @@ public class AddRouteActivity extends BaseAppCompatActivity {
         updateMapOverlay();
     }
     private void showBottomSheet(){
+        bsd.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
         bsd.show();
         //bottomPosAdapter.highLightedItem(sugIndex);
     }
@@ -405,7 +406,7 @@ public class AddRouteActivity extends BaseAppCompatActivity {
             builder.latitude(latitude).longitude(longitude).accuracy(bdLocation.getRadius()).direction(bdLocation.getDirection());
             MyLocationData data=builder.build();
             baiduMap.setMyLocationData(data);
-            if (routeId==null){
+            if (routeItem==null){
                 LatLng latLng=new LatLng(bdLocation.getLatitude(),bdLocation.getLongitude());
                 MapStatus mapStatus=new MapStatus.Builder().target(latLng).zoom(15).build();
                 MapStatusUpdate mapStatusUpdate= MapStatusUpdateFactory.newMapStatus(mapStatus);
@@ -442,6 +443,26 @@ public class AddRouteActivity extends BaseAppCompatActivity {
                 .icon(bitmap);
         baiduMap.addOverlay(option);
     }
+    private class MyHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            try {
+                switch (msg.what){
+                    case CONNECTION_FAILED:
+                        Toast.makeText(AddRouteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                        break;
+                    case COMMIT_SUCCESS:
+                        Toast.makeText(AddRouteActivity.this, "上传成功", Toast.LENGTH_SHORT).show();
+                        finish();
+                        break;
+                    case DELETE_SUCCESS:
+                        Toast.makeText(AddRouteActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+                        finish();
+                        break;
+                }
+            }catch (Exception e){}
+        }
+    }
     @Override
     public void onBackPressed() {
         if (adapter.getItemCount()>0){
@@ -469,9 +490,9 @@ public class AddRouteActivity extends BaseAppCompatActivity {
         mapView.onPause();
         super.onPause();
     }
-    public static void startAddRouteActivityForResult(Context context,int requestCode,String routeId){
+    public static void startAddRouteActivityForResult(Context context, int requestCode, RouteItem item){
         Intent intent=new Intent(context,AddRouteActivity.class);
-        intent.putExtra("route_id",routeId);
+        intent.putExtra("route",item);
         ((AppCompatActivity)context).startActivityForResult(intent,requestCode);
     }
 }

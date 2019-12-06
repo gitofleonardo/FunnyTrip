@@ -22,7 +22,26 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".activity.team.TeamDetailActivity"></activity>
+        <activity android:name=".activity.team.TeamInvitationActivity"></activity>
+
+        <receiver
+            android:name=".broadcast.MessageReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="cn.huangchengxi.funnytrip.MESSAGE_RECEIVER" />
+            </intent-filter>
+        </receiver>
+
+        <activity android:name=".activity.friend.FriendInvitationsActivity" />
+
+        <service
+            android:name=".activity.service.WebSocketMessageService"
+            android:enabled="true"
+            android:exported="true" />
+
+        <activity android:name=".activity.moments.WriteMomentActivity" />
+        <activity android:name=".activity.team.TeamDetailActivity" />
         <activity android:name=".activity.team.TeamRoomActivity" />
         <activity android:name=".activity.team.AddTeamActivity" />
         <activity android:name=".activity.account.MyHomepageActivity" />

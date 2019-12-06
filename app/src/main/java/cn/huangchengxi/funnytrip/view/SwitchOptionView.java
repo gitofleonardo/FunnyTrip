@@ -61,4 +61,7 @@ public class SwitchOptionView extends FrameLayout {
     public void setOnCheckStateChangedListener(OnCheckStateChangedListener onCheckStateChangedListener) {
         this.onCheckStateChangedListener = onCheckStateChangedListener;
     }
+    public boolean getSwitchState(){
+        return switchButton.isChecked();
+    }
 }

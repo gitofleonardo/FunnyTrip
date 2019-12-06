@@ -11,12 +11,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.moments.MomentsFragment;
+import cn.huangchengxi.funnytrip.activity.moments.ViewNotAllowFragment;
+import cn.huangchengxi.funnytrip.activity.network.NetworkNotAvailableFragment;
 
-public class UserMomentActivity extends AppCompatActivity implements MomentsFragment.OnFragmentInteractionListener{
+public class UserMomentActivity extends AppCompatActivity implements MomentsFragment.OnFragmentInteractionListener, ViewNotAllowFragment.OnFragmentInteractionListener {
     private Toolbar toolbar;
     private ImageView back;
     private String id;
@@ -30,6 +30,7 @@ public class UserMomentActivity extends AppCompatActivity implements MomentsFrag
     private void init(){
         id=getIntent().getStringExtra("id");
         toolbar=findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         back=findViewById(R.id.back);
         back.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -39,17 +40,22 @@ public class UserMomentActivity extends AppCompatActivity implements MomentsFrag
         });
         FragmentManager manager=getSupportFragmentManager();
         FragmentTransaction transaction=manager.beginTransaction();
-        transaction.add(R.id.fragment_layout, MomentsFragment.newInstance(id));
-        transaction.commit();
+        MomentsFragment fragment=MomentsFragment.newInstance(id);
+        fragment.setOnNotAllowListener(new MomentsFragment.OnNotAllowListener() {
+            @Override
+            public void onCommit() {
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_layout,ViewNotAllowFragment.newInstance()).commitAllowingStateLoss();
+            }
+        });
+        transaction.add(R.id.fragment_layout,fragment);
+        transaction.commitAllowingStateLoss();
     }
     public static void startUserMomentActivity(Context context,String id){
         Intent intent=new Intent(context,UserMomentActivity.class);
         intent.putExtra("id",id);
         context.startActivity(intent);
     }
-
     @Override
     public void onFragmentInteraction(Uri uri) {
-
     }
 }

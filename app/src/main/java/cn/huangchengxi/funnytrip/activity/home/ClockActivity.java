@@ -4,6 +4,8 @@ import android.content.DialogInterface;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.View;
 import android.widget.Toast;
 
@@ -25,11 +27,20 @@ import com.baidu.mapapi.model.LatLng;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.Date;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
+import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class ClockActivity extends BaseAppCompatActivity {
     public static final int SUCCESS=0;
@@ -46,6 +57,13 @@ public class ClockActivity extends BaseAppCompatActivity {
 
     private double latitude;
     private double longitude;
+
+    private final int CONNECTION_FAILED=0;
+    private final int CLOCK_SUCCESS=1;
+    private final int CLOCK_FAILED=2;
+    private final int NOT_LOGIN=3;
+
+    private MyHandler myHandler=new MyHandler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +89,6 @@ public class ClockActivity extends BaseAppCompatActivity {
             MapStatus mapStatus=new MapStatus.Builder().target(latLng).zoom(15).build();
             MapStatusUpdate mapStatusUpdate= MapStatusUpdateFactory.newMapStatus(mapStatus);
             baiduMap.setMapStatus(mapStatusUpdate);
-
             showBottomSheet();
         }
     }
@@ -103,10 +120,11 @@ public class ClockActivity extends BaseAppCompatActivity {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     //do process
-                                    insertIntoTableAndUpdate(locationMsg,latitude,longitude);
+                                    //insertIntoTableAndUpdate(locationMsg,latitude,longitude);
                                     //return to main
-                                    setResult(SUCCESS);
-                                    finish();
+                                    //setResult(SUCCESS);
+                                    //finish();
+                                    clock(locationMsg,latitude,longitude);
                                 }
                             })
                             .setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -121,6 +139,25 @@ public class ClockActivity extends BaseAppCompatActivity {
                 }
             }
         }).setActionTextColor(Color.rgb(255,255,255)).setBackgroundTint(Color.rgb(3,169,244)).show();
+    }
+    private void clock(String location,double latitude,double longitude){
+        String uid=((MainApplication)getApplicationContext()).getUID();
+        HttpHelper.commitClock(uid, location, new Date().getTime(), latitude, longitude, this, new HttpHelper.OnCommonResult() {
+            @Override
+            public void onReturnFailure() {
+                sendMessage(CONNECTION_FAILED);
+            }
+
+            @Override
+            public void onReturnSuccess() {
+                sendMessage(CLOCK_SUCCESS);
+            }
+        });
+    }
+    private void sendMessage(int what){
+        Message msg=myHandler.obtainMessage();
+        msg.what=what;
+        myHandler.sendMessage(msg);
     }
     private void insertIntoTableAndUpdate(String location,double latitude,double longitude){
         SqliteHelper helper=new SqliteHelper(this,"clocks",null,1);
@@ -147,7 +184,26 @@ public class ClockActivity extends BaseAppCompatActivity {
             }
         });
     }
-
+    private class MyHandler extends Handler{
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what){
+                case CONNECTION_FAILED:
+                    Toast.makeText(ClockActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                    break;
+                case CLOCK_FAILED:
+                    Toast.makeText(ClockActivity.this, "打卡失败", Toast.LENGTH_SHORT).show();
+                    break;
+                case CLOCK_SUCCESS:
+                    Toast.makeText(ClockActivity.this, "打卡成功", Toast.LENGTH_SHORT).show();
+                    setResult(SUCCESS);
+                    finish();
+                    break;
+                case NOT_LOGIN:
+                    break;
+            }
+        }
+    }
     @Override
     protected void onPause() {
         mapView.onPause();

@@ -5,7 +5,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -24,6 +26,7 @@ public class SetInterestActivity extends AppCompatActivity {
     private TextView save;
     private InterestRVAdapter adapter;
     private List<InterestItem> list;
+    private String interest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +50,16 @@ public class SetInterestActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //do save process
+                String interests="";
+                for (int i=0;i<list.size();i++){
+                    if (list.get(i).isSelected()){
+                        interests+=interests.equals("")?list.get(i).getName():" "+list.get(i).getName();
+                    }
+                }
+                Intent intent=new Intent();
+                intent.putExtra("interests",interests);
+                setResult(1,intent);
+                finish();
             }
         });
         list=new ArrayList<>();
@@ -108,6 +121,19 @@ public class SetInterestActivity extends AppCompatActivity {
         list.add(new InterestItem("雕刻",false));
         list.add(new InterestItem("裁缝",false));
         list.add(new InterestItem("设计",false));
+
+        interest=getIntent().getStringExtra("interests");
+        if (interest!=null && !interest.equals("null") && !interest.equals("")){
+            String[] ins=interest.split(" ");
+            for (String name:ins){
+                for (int i=0;i<list.size();i++){
+                    if (list.get(i).getName().equals(name)){
+                        list.get(i).setSelected(true);
+                    }
+                }
+            }
+        }
+
         adapter=new InterestRVAdapter(list);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));

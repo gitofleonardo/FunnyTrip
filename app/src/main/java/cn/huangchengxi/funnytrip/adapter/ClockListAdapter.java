@@ -80,7 +80,9 @@ public class ClockListAdapter extends RecyclerView.Adapter<ClockListHolder> impl
     public void setOnSwipeListener(OnSwipeListener onSwipeListener) {
         this.onSwipeListener = onSwipeListener;
     }
-
+    public ClockItem getClockItem(int position){
+        return list.get(position);
+    }
     public void setOnItemDelete(OnItemDelete onItemDelete) {
         this.onItemDelete = onItemDelete;
     }

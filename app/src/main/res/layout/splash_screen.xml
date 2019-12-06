@@ -8,6 +8,7 @@
     android:orientation="vertical"
     android:background="@color/ThemeBlue">
     <ImageView
+        android:src="@drawable/splash"
         android:id="@+id/splash_img"
         android:layout_weight="9"
         android:layout_width="match_parent"
@@ -26,20 +27,25 @@
             android:textAllCaps="false"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
-        <FrameLayout
-            android:id="@+id/splash_skip_bt"
-            android:shadowRadius="0"
-            android:background="@drawable/skip_button_bg"
-            android:textAllCaps="false"
-            android:layout_gravity="center|right"
-            android:layout_marginRight="20dp"
-            android:layout_width="80dp"
-            android:layout_height="40dp" >
-            <TextView
+        <LinearLayout
+            android:layout_gravity="center"
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+            <ImageView
                 android:layout_gravity="center"
-                android:text="@string/skip_button_text"
+                android:scaleType="fitXY"
+                android:id="@+id/loading"
+                android:src="@drawable/loading"
+                android:layout_width="20dp"
+                android:layout_height="20dp"/>
+            <TextView
+                android:layout_marginLeft="10dp"
+                android:id="@+id/loading_text"
+                android:text="登陆中"
+                android:gravity="center"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-        </FrameLayout>
+                android:layout_height="match_parent"/>
+        </LinearLayout>
     </FrameLayout>
 </androidx.appcompat.widget.LinearLayoutCompat>

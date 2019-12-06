@@ -6,10 +6,16 @@ import java.util.Date;
 public class NoteItem {
     private long time;
     private String content;
+    private String id;
 
-    public NoteItem(long time,String content){
+    public NoteItem(String id,long time,String content){
         this.content=content;
         this.time=time;
+        this.id=id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getContent() {

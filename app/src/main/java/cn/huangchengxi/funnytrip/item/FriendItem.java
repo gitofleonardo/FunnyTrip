@@ -3,11 +3,13 @@ package cn.huangchengxi.funnytrip.item;
 public class FriendItem {
     private String userID;
     private String userName;
+    private String portraitUrl;
     private Character letter;
     private boolean isFriendItem=true;
 
-    public FriendItem(String userID,String userName){
+    public FriendItem(String userID,String userName,String portraitUrl){
         this.userID=userID;
+        this.portraitUrl=portraitUrl;
         this.userName=userName;
         isFriendItem=true;
     }
@@ -28,5 +30,9 @@ public class FriendItem {
 
     public Character getLetter() {
         return letter;
+    }
+
+    public String getPortraitUrl() {
+        return portraitUrl;
     }
 }

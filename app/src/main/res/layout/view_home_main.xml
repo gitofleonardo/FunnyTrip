@@ -13,10 +13,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <com.google.android.material.appbar.CollapsingToolbarLayout
+            app:contentScrim="@color/ThemeBlue"
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
             <ImageView
+                android:tag="overScroll"
                 android:id="@+id/home_head_img"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
@@ -28,7 +30,6 @@
                 app:layout_collapseParallaxMultiplier="0.9" />
         </com.google.android.material.appbar.CollapsingToolbarLayout>
     </com.google.android.material.appbar.AppBarLayout>
-
     <androidx.core.widget.NestedScrollView
         android:overScrollMode="never"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
@@ -54,9 +55,9 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
     <androidx.appcompat.widget.Toolbar
+        app:layout_collapseMode="pin"
         android:paddingTop="23dp"
         app:layout_behavior=".behavior.HomeToolBarBehavior"
-        android:fitsSystemWindows="true"
         app:layout_anchor="@id/home_head_img"
         android:id="@+id/home_tool_bar"
         android:layout_width="match_parent"

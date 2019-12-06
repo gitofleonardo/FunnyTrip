@@ -1,11 +1,13 @@
 package cn.huangchengxi.funnytrip.item;
 
-public class PositionItem {
+import java.io.Serializable;
+
+public class PositionItem implements Serializable {
     private String PosId;
     private String name;
-    private double latitude;
-    private double longitude;
-    public PositionItem(String posId,String name,double latitude,double longitude){
+    private Double latitude;
+    private Double longitude;
+    public PositionItem(String posId,String name,Double latitude,Double longitude){
         this.latitude=latitude;
         this.longitude=longitude;
         this.name=name;

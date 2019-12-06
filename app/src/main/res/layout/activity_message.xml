@@ -44,6 +44,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="80dp">
                 <cn.huangchengxi.funnytrip.view.HomeAppView
+                    android:foreground="?selectableItemBackground"
                     android:layout_margin="5dp"
                     android:id="@+id/new_friends"
                     app:icon="@drawable/new_friends"
@@ -52,14 +53,16 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"/>
                 <cn.huangchengxi.funnytrip.view.HomeAppView
+                    android:foreground="?selectableItemBackground"
                     android:layout_margin="5dp"
                     android:id="@+id/system_msg"
-                    app:icon="@drawable/system"
+                    app:icon="@drawable/team"
                     android:layout_weight="1"
-                    app:name="系统消息"
+                    app:name="组队请求"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"/>
                 <cn.huangchengxi.funnytrip.view.HomeAppView
+                    android:visibility="gone"
                     android:layout_margin="5dp"
                     android:id="@+id/reply"
                     app:icon="@drawable/message"
