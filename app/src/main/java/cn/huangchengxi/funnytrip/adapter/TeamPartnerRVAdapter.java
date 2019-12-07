@@ -1,5 +1,6 @@
 package cn.huangchengxi.funnytrip.adapter;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,18 +8,23 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.item.TeamPartnerItem;
+import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.viewholder.TeamPartnerRVHolder;
 
 public class TeamPartnerRVAdapter extends RecyclerView.Adapter<TeamPartnerRVHolder> {
     private List<TeamPartnerItem> list;
     private OnPortraitClick onPortraitClick;
+    private Context context;
 
-    public TeamPartnerRVAdapter(List<TeamPartnerItem> list) {
+    public TeamPartnerRVAdapter(final Context context,List<TeamPartnerItem> list) {
         this.list=list;
+        this.context=context;
     }
 
     @NonNull
@@ -39,6 +45,11 @@ public class TeamPartnerRVAdapter extends RecyclerView.Adapter<TeamPartnerRVHold
             }
         });
         holder.name.setText(item.getUserName());
+        if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
+            Glide.with(context).load(HttpHelper.PIC_SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
+        }else{
+            holder.portrait.setImageResource(R.drawable.portrait);
+        }
     }
 
     @Override

@@ -125,7 +125,8 @@ public class SearchFriendActivity extends AppCompatActivity {
             }
             @Override
             public void onReturnResultList(SearchResultBean bean) {
-                list=bean.getList();
+                list.clear();
+                list.addAll(bean.getList());
                 sendMessage(SEARCH_OK);
             }
         });
@@ -142,6 +143,7 @@ public class SearchFriendActivity extends AppCompatActivity {
             switch (msg.what){
                 case SEARCH_OK:
                     adapter.notifyDataSetChanged();
+
                     if (list.size()==0){
                         Toast.makeText(SearchFriendActivity.this, "搜索不到任何用户", Toast.LENGTH_SHORT).show();
                     }

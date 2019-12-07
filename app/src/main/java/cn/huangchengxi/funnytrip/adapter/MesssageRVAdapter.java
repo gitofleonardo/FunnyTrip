@@ -50,7 +50,7 @@ public class MesssageRVAdapter extends RecyclerView.Adapter<MessageRVHolder> {
             }
         });
         if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
-            Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
+            Glide.with(context).load(HttpHelper.PIC_SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
         }else{
             holder.portrait.setImageResource(R.drawable.portrait);
         }

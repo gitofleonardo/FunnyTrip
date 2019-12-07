@@ -288,7 +288,7 @@ public class AccountInfoFragment extends Fragment {
             }
         });
         if (!bean.getPortraitUrl().equals("null")){
-            Glide.with(getContext()).load(HttpHelper.SERVER_HOST+bean.getPortraitUrl()).into(portrait);
+            Glide.with(getContext()).load(HttpHelper.PIC_SERVER_HOST+bean.getPortraitUrl()).into(portrait);
         }
         if (!bean.getNickname().equals("null")){
             setName.setSubText(bean.getNickname());
@@ -343,7 +343,7 @@ public class AccountInfoFragment extends Fragment {
                 case UPLOAD_PORTRAIT_SUCCESS:
                     Toast.makeText(getContext(), "上传成功", Toast.LENGTH_SHORT).show();
                     String url=(String)msg.obj;
-                    Glide.with(getContext()).load(HttpHelper.SERVER_HOST+url).into(portrait);
+                    Glide.with(getContext()).load(HttpHelper.PIC_SERVER_HOST+url).into(portrait);
                     break;
                 case CONNECTION_FAILED:
                     Toast.makeText(getContext(), "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
@@ -404,7 +404,7 @@ public class AccountInfoFragment extends Fragment {
             case SET_INTEREST:
                 if (data!=null){
                     newInterest=data.getStringExtra("interests");
-                    changed=true;
+                    notifyDatasetChanged();
                     Log.e("new interest",newInterest);
                     if (newInterest.equals("")){
                         newInterest=null;

@@ -155,8 +155,6 @@ public class AccountInfoActivity extends AppCompatActivity implements NetworkNot
                     Toast.makeText(AccountInfoActivity.this, "更改成功", Toast.LENGTH_SHORT).show();
                     finish();
                     break;
-                case NOT_LOGIN:
-                    break;
                 case FETCH_MY_INFORMATION_SUCCESS:
                     if (currentFragment!=null){
                         getSupportFragmentManager().beginTransaction().remove(currentFragment).commitAllowingStateLoss();

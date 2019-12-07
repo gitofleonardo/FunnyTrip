@@ -36,16 +36,27 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-        <TextView
-            android:padding="10dp"
-            android:background="@drawable/message_bg"
-            android:maxWidth="400dp"
+        <LinearLayout
+            android:layout_gravity="top|right"
             android:layout_marginTop="10dp"
             android:layout_marginRight="60dp"
-            android:layout_gravity="top|right"
-            android:id="@+id/my_text"
+            android:orientation="horizontal"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content">
+            <ImageView
+                android:id="@+id/sending_img"
+                android:layout_gravity="right|center"
+                android:src="@drawable/loading"
+                android:layout_width="20dp"
+                android:layout_height="20dp"/>
+            <TextView
+                android:padding="10dp"
+                android:background="@drawable/message_bg"
+                android:maxWidth="400dp"
+                android:id="@+id/my_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
         <androidx.cardview.widget.CardView
             app:cardElevation="0dp"
             app:cardCornerRadius="20dp"

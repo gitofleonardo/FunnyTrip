@@ -1,5 +1,6 @@
 package cn.huangchengxi.funnytrip.adapter;
 
+import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,17 +9,21 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.item.TeamInviteFriendItem;
+import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.viewholder.TeamInviteFriendRVHodler;
 
 public class TeamInviteFriendRVAdapter extends RecyclerView.Adapter<TeamInviteFriendRVHodler> {
     private List<TeamInviteFriendItem> list;
     private OnDeleteClick onDeleteClick;
+    private Context context;
 
-    public TeamInviteFriendRVAdapter(final List<TeamInviteFriendItem> list) {
+    public TeamInviteFriendRVAdapter(final List<TeamInviteFriendItem> list,final Context context) {
         this.list=list;
         this.onDeleteClick=new OnDeleteClick() {
             @Override
@@ -28,6 +33,7 @@ public class TeamInviteFriendRVAdapter extends RecyclerView.Adapter<TeamInviteFr
                 notifyItemRangeChanged(position,list.size()-position);
             }
         };
+        this.context=context;
     }
     @NonNull
     @Override
@@ -53,6 +59,11 @@ public class TeamInviteFriendRVAdapter extends RecyclerView.Adapter<TeamInviteFr
                 }
             }
         });
+        if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
+            Glide.with(context).load(HttpHelper.PIC_SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
+        }else{
+            holder.portrait.setImageResource(R.drawable.portrait);
+        }
     }
 
     @Override

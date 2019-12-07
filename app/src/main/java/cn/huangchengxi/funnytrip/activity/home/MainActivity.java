@@ -1,11 +1,10 @@
 package cn.huangchengxi.funnytrip.activity.home;
 
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,7 +14,6 @@ import android.os.Message;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.ScaleAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -23,6 +21,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -41,13 +40,11 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationView;
 
-import org.java_websocket.client.WebSocketClient;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -66,6 +63,7 @@ import cn.huangchengxi.funnytrip.activity.note.MyNoteActivity;
 import cn.huangchengxi.funnytrip.adapter.ClockListAdapter;
 import cn.huangchengxi.funnytrip.adapter.NoteAdapter;
 import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.broadcast.MessageSocketStateReceiver;
 import cn.huangchengxi.funnytrip.databean.ClocksResultBean;
 import cn.huangchengxi.funnytrip.databean.NotesResultBean;
 import cn.huangchengxi.funnytrip.databean.UserInformationBean;
@@ -117,6 +115,10 @@ public class MainActivity extends BaseAppCompatActivity {
     private HomeAppView teamView;
     private ImageView navPortrait;
     private TextView userName;
+    private FrameLayout networkState;
+    private MessageSocketStateReceiver stateReceiver;
+    private ServiceConnection messageServiceConnection;
+    private WebSocketMessageService messageService;
 
     private final int WEATHER_OK=0;
     private final int WEATHER_FAIL=1;
@@ -158,6 +160,15 @@ public class MainActivity extends BaseAppCompatActivity {
         init();
     }
     private void init(){
+        networkState=findViewById(R.id.network_state);
+        networkState.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (messageService!=null){
+                    messageService.requestConnection();
+                }
+            }
+        });
         clockListView=findViewById(R.id.clock_list);
         clockListAdapter=new ClockListAdapter(false);
         for (int i=0;i<MainApplication.clocks.size();i++){
@@ -283,8 +294,21 @@ public class MainActivity extends BaseAppCompatActivity {
                         startActivityForResult(new Intent(MainActivity.this,WeatherPicker.class),WEATHER_RC);
                         break;
                     case R.id.logout:
-                        startActivity(new Intent(MainActivity.this,LoginActivity.class));
-                        finish();
+                        new AlertDialog.Builder(MainActivity.this).setTitle("确定注销").setCancelable(false).setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                unregisterReceiver(stateReceiver);
+                                stateReceiver=null;
+                                messageService.closeConnection();
+                                startActivity(new Intent(MainActivity.this,LoginActivity.class));
+                                finish();
+                            }
+                        }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                dialogInterface.dismiss();
+                            }
+                        }).show();
                         break;
                 }
                 return true;
@@ -370,10 +394,42 @@ public class MainActivity extends BaseAppCompatActivity {
         locationClient.setLocOption(option);
         locationClient.start();
 
+        bindMessageService();
+        registerStateReceiver();
         fetchWeather();
         fetchMyInformation();
         fetchClocks(new Date().getTime(),true);
         fetchNotes(new Date().getTime());
+    }
+    private void bindMessageService(){
+        Intent intent=new Intent(this,WebSocketMessageService.class);
+        messageServiceConnection=new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                messageService=((WebSocketMessageService.WebSocketClientBinder)iBinder).getService();
+            }
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {
+
+            }
+        };
+        bindService(intent,messageServiceConnection,BIND_AUTO_CREATE);
+    }
+    private void registerStateReceiver(){
+        stateReceiver=new MessageSocketStateReceiver();
+        stateReceiver.setOnStateChangeListener(new MessageSocketStateReceiver.OnStateChangeListener() {
+            @Override
+            public void onStateChange(int newState) {
+                if (newState==MessageSocketStateReceiver.STATE_CONNECTED){
+                    networkState.setVisibility(View.GONE);
+                }else if (newState==MessageSocketStateReceiver.STATE_DISCONNECTED){
+                    networkState.setVisibility(View.VISIBLE);
+                    messageService.requestConnection();
+                }
+            }
+        });
+        IntentFilter intentFilter=new IntentFilter("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
+        registerReceiver(stateReceiver,intentFilter);
     }
     private void showClocksBottomSheet(){
         final View view=View.inflate(this,R.layout.view_my_clock_all,null);
@@ -437,12 +493,6 @@ public class MainActivity extends BaseAppCompatActivity {
         bsd.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
             public void onDismiss(DialogInterface dialogInterface) {
-                /*
-                ScaleAnimation animation=new ScaleAnimation(0.9f,1.0f,0.9f,0.9f);
-                homeView.setAnimation(animation);
-                animation.start();
-
-                 */
                 homeView.setScaleX(1);
                 homeView.setScaleY(1);
             }
@@ -450,12 +500,6 @@ public class MainActivity extends BaseAppCompatActivity {
         bsd.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialogInterface) {
-                /*
-                ScaleAnimation animation=new ScaleAnimation(0.9f,1.0f,0.9f,0.9f);
-                homeView.setAnimation(animation);
-                animation.start();
-
-                 */
                 homeView.setScaleX(1);
                 homeView.setScaleY(1);
             }
@@ -574,7 +618,7 @@ public class MainActivity extends BaseAppCompatActivity {
                         break;
                     case FETCH_MY_INFORMATION_SUCCESS:
                         if (portrait_url!=null && !portrait_url.equals("") && !portrait_url.equals("null")){
-                            Glide.with(MainActivity.this).load(HttpHelper.SERVER_HOST+portrait_url).into(navPortrait);
+                            Glide.with(MainActivity.this).load(HttpHelper.PIC_SERVER_HOST+portrait_url).into(navPortrait);
                         }
                         if (nickname!=null && !nickname.equals("null") && !nickname.equals("")){
                             userName.setText(nickname);
@@ -658,6 +702,17 @@ public class MainActivity extends BaseAppCompatActivity {
         }else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (stateReceiver!=null){
+            unregisterReceiver(stateReceiver);
+        }
+        if (messageServiceConnection!=null){
+            unbindService(messageServiceConnection);
+        }
+        super.onDestroy();
     }
 
     @Override

@@ -178,7 +178,7 @@ public class SplashScreen extends BaseAppCompatActivity {
         SQLiteDatabase db=helper.getWritableDatabase();
         Cursor cursor=db.query("users",null,null,null,null,null,null);
         if (cursor.moveToFirst()){
-            db.execSQL("delete from users where email=\""+accountStr+"\"");
+            db.execSQL("delete from users");
             db.execSQL("insert into users values(\""+accountStr+"\",\""+passwordStr+"\")");
         }else{
             db.execSQL("insert into users values(\""+accountStr+"\",\""+passwordStr+"\")");

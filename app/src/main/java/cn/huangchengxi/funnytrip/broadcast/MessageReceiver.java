@@ -11,16 +11,24 @@ public class MessageReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (onMessageReceived!=null){
-            String content=intent.getStringExtra("content");
-            String fromUID=intent.getStringExtra("from_uid");
-            String toUID=intent.getStringExtra("to_uid");
-            long time=intent.getLongExtra("time",new Date().getTime());
-            String con=intent.getStringExtra("fromActivity");
-            onMessageReceived.OnReveived(fromUID,toUID,content,time,con);
+            boolean isReturn=intent.getBooleanExtra("is_return_message",true);
+            if (isReturn){
+                String messageID=intent.getStringExtra("message_id");
+                onMessageReceived.onSuccessSent(messageID);
+            }else{
+                String content=intent.getStringExtra("content");
+                String fromUID=intent.getStringExtra("from_uid");
+                String toUID=intent.getStringExtra("to_uid");
+                String messageID=intent.getStringExtra("message_id");
+                long time=intent.getLongExtra("time",new Date().getTime());
+                String con=intent.getStringExtra("fromActivity");
+                onMessageReceived.OnReveived(messageID,fromUID,toUID,content,time,con);
+            }
         }
     }
     public interface OnMessageReceived{
-        void OnReveived(String fromUID,String toUID,String content,long time,String context);
+        void OnReveived(String messageID,String fromUID,String toUID,String content,long time,String context);
+        void onSuccessSent(String messageID);
     }
 
     public void setOnMessageReceived(OnMessageReceived onMessageReceived) {

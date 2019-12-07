@@ -40,6 +40,28 @@
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+            <FrameLayout
+                android:visibility="gone"
+                android:id="@+id/network_state"
+                android:backgroundTint="@color/ThemeBlue"
+                android:background="@color/ThemeBlue"
+                android:layout_width="match_parent"
+                android:layout_height="48dp">
+                <TextView
+                    android:layout_gravity="left"
+                    android:layout_marginLeft="10dp"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:text="无网络连接"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"/>
+                <ImageView
+                    android:layout_marginRight="10dp"
+                    android:src="@drawable/white_right"
+                    android:layout_gravity="right"
+                    android:layout_width="24dp"
+                    android:layout_height="match_parent"/>
+            </FrameLayout>
             <LinearLayout
                 android:id="@+id/clock_id"
                 android:layout_gravity="top"

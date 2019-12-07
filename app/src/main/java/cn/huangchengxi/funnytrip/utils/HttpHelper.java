@@ -24,6 +24,9 @@ import cn.huangchengxi.funnytrip.databean.NotesResultBean;
 import cn.huangchengxi.funnytrip.databean.PortraitUrlBean;
 import cn.huangchengxi.funnytrip.databean.RoutesResultBean;
 import cn.huangchengxi.funnytrip.databean.SearchResultBean;
+import cn.huangchengxi.funnytrip.databean.TeamInformationResultBean;
+import cn.huangchengxi.funnytrip.databean.TeamInvitationResultBean;
+import cn.huangchengxi.funnytrip.databean.TeamResultBean;
 import cn.huangchengxi.funnytrip.databean.TipsResultBean;
 import cn.huangchengxi.funnytrip.databean.UserInformationBean;
 import cn.huangchengxi.funnytrip.databean.UserPropertiesBean;
@@ -35,9 +38,11 @@ import cn.huangchengxi.funnytrip.item.MomentItem;
 import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.item.PositionItem;
 import cn.huangchengxi.funnytrip.item.RouteItem;
+import cn.huangchengxi.funnytrip.item.TeamInvitationItem;
+import cn.huangchengxi.funnytrip.item.TeamItem;
+import cn.huangchengxi.funnytrip.item.TeamPartnerItem;
 import cn.huangchengxi.funnytrip.item.TipsItem;
 import cn.huangchengxi.funnytrip.utils.sqlite.LocalUsersUpdate;
-import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -50,8 +55,9 @@ import okhttp3.WebSocketListener;
 
 public class HttpHelper {
     private HttpHelper(){}
-    public static final String SERVER_HOST="http://192.168.43.184:8080/FunnyTripServer";
-    public static final String SERVER_SOCKET="ws://192.168.43.184:8080/FunnyTripServer";
+    public static final String SERVER_HOST="http://huangchengxi.cn:8080/FunnyTripServer";
+    public static final String SERVER_SOCKET="ws://huangchengxi.cn:8080/FunnyTripServer";
+    public static final String PIC_SERVER_HOST="http://huangchengxi.cn:8080/FunnyTripServer";
 
     public static void sendOKHttpRequest(String address,okhttp3.Callback callback){
         OkHttpClient client=new OkHttpClient();
@@ -1778,6 +1784,363 @@ public class HttpHelper {
                             @Override
                             public void onSuccess() {
                                 deleteRoute(routeID, context, onCommonResult);
+                            }
+
+                            @Override
+                            public void onFailure() {
+                                if (onCommonResult!=null){
+                                    onCommonResult.onReturnFailure();
+                                }
+                            }
+                        });
+                    }else{
+                        if (onCommonResult!=null){
+                            onCommonResult.onReturnFailure();
+                        }
+                    }
+                }catch (Exception e){
+                    if (onCommonResult!=null){
+                        onCommonResult.onReturnFailure();
+                    }
+                }
+            }
+        });
+    }
+    public static void fetchTeams(final Context context,final OnTeamResult onTeamResult){
+        String uid=((MainApplication)context.getApplicationContext()).getUID();
+        String session=((MainApplication)context.getApplicationContext()).getJSESSIONID();
+        String data="{" +
+                "\"uid\":\""+uid+"\"" +
+                "}";
+        sendOKHttpRequestWithDataAndSession(SERVER_HOST + "/FetchTeams", data, session, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                if (onTeamResult!=null){
+                    onTeamResult.onReturnFailure();
+                }
+            }
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                try {
+                    JSONObject json=new JSONObject(response.body().string());
+                    String result=json.getString("result");
+                    if (result.equals("ok")){
+                        JSONArray array=json.getJSONArray("data");
+                        ArrayList<TeamItem> list=new ArrayList<>();
+                        for (int i=0;i<array.length();i++){
+                            JSONObject team=array.getJSONObject(i);
+                            String teamID=team.getString("team_id");
+                            String teamCreatorUID=team.getString("team_creator_id");
+                            String teamName=team.getString("team_name");
+                            long time=team.getLong("team_create_time");
+                            TeamItem item=new TeamItem(teamID,teamName,time);
+                            list.add(item);
+                        }
+                        TeamResultBean bean=new TeamResultBean(list);
+                        if (onTeamResult!=null){
+                            onTeamResult.onReturnSuccess(bean);
+                        }
+                    }else if (result.equals("not_login")){
+                        restoreLoginSession(context, new OnLoginRestore() {
+                            @Override
+                            public void onSuccess() {
+                                fetchTeams(context,onTeamResult);
+                            }
+
+                            @Override
+                            public void onFailure() {
+                                if (onTeamResult!=null){
+                                    onTeamResult.onReturnFailure();
+                                }
+                            }
+                        });
+                    }else{
+                    }
+                }catch (Exception e){
+                    if (onTeamResult!=null){
+                        onTeamResult.onReturnFailure();
+                    }
+                }
+            }
+        });
+    }
+    public interface OnTeamResult{
+        void onReturnFailure();
+        void onReturnSuccess(TeamResultBean bean);
+    }
+    public static void createTeam(final String teamName, final Context context, final OnTeamCreateResult onCommonResult) {
+        String uid = ((MainApplication) context.getApplicationContext()).getUID();
+        String session = ((MainApplication) context.getApplicationContext()).getJSESSIONID();
+        String data = "{" +
+                "\"uid\":\"" + uid + "\"," +
+                "\"team_name\":\"" + teamName + "\"" +
+                "}";
+        sendOKHttpRequestWithDataAndSession(SERVER_HOST + "/CreateTeam", data, session, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                if (onCommonResult!=null){
+                    onCommonResult.onReturnFailure();
+                }
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                try {
+                    JSONObject json=new JSONObject(response.body().string());
+                    String result=json.getString("result");
+                    if (result.equals("ok")){
+                        if (onCommonResult!=null){
+                            onCommonResult.onReturnSuccess(json.getString("team_id"));
+                        }
+                    }else if (result.equals("not_login")){
+                        restoreLoginSession(context, new OnLoginRestore() {
+                            @Override
+                            public void onSuccess() {
+                                createTeam(teamName, context, onCommonResult);
+                            }
+                            @Override
+                            public void onFailure() {
+                                if (onCommonResult!=null){
+                                    onCommonResult.onReturnFailure();
+                                }
+                            }
+                        });
+                    }else{
+                        if (onCommonResult!=null){
+                            onCommonResult.onReturnFailure();
+                        }
+                    }
+                }catch (Exception e){
+                    if (onCommonResult!=null){
+                        onCommonResult.onReturnFailure();
+                    }
+                }
+            }
+        });
+    }
+    public interface OnTeamCreateResult{
+        void onReturnFailure();
+        void onReturnSuccess(String teamID);
+    }
+    public static void exitTeam(final String teamID, final boolean delete, final Context context, final OnCommonResult onCommonResult){
+        String uid=((MainApplication)context.getApplicationContext()).getUID();
+        String session=((MainApplication)context.getApplicationContext()).getJSESSIONID();
+        String data="{" +
+                "\"uid\":\""+uid+"\"," +
+                "\"team_id\":\""+teamID+"\"," +
+                "\"delete_team\":"+delete +
+                "}";
+        sendOKHttpRequestWithDataAndSession(SERVER_HOST + "/ExitTeam", data, session, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                if (onCommonResult!=null){
+                    onCommonResult.onReturnFailure();
+                }
+            }
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                try {
+                    JSONObject json=new JSONObject(response.body().string());
+                    String result=json.getString("result");
+                    if (result.equals("ok")){
+                        if (onCommonResult!=null){
+                            onCommonResult.onReturnSuccess();
+                        }
+                    }else if (result.equals("not_login")){
+                        restoreLoginSession(context, new OnLoginRestore() {
+                            @Override
+                            public void onSuccess() {
+                                exitTeam(teamID,delete, context, onCommonResult);
+                            }
+                            @Override
+                            public void onFailure() {
+                                if (onCommonResult!=null){
+                                    onCommonResult.onReturnFailure();
+                                }
+                            }
+                        });
+                    }else{
+                        if (onCommonResult!=null){
+                            onCommonResult.onReturnFailure();
+                        }
+                    }
+                }catch (Exception e){
+                    if (onCommonResult!=null){
+                        onCommonResult.onReturnFailure();
+                    }
+                }
+            }
+        });
+    }
+    public static void fetchTeamInformation(final String teamID, final Context context, final OnTeamInformationResult onTeamInformationResult){
+        String uid=((MainApplication)context.getApplicationContext()).getUID();
+        String session=((MainApplication)context.getApplicationContext()).getJSESSIONID();
+        String data="{" +
+                "\"uid\":\""+uid+"\"," +
+                "\"team_id\":\""+teamID+"\"" +
+                "}";
+        sendOKHttpRequestWithDataAndSession(SERVER_HOST + "/FetchTeamInformation", data, session, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                if (onTeamInformationResult!=null){
+                    onTeamInformationResult.onReturnFailure();
+                }
+            }
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                try {
+                    JSONObject json=new JSONObject(response.body().string());
+                    String result=json.getString("result");
+                    if (result.equals("ok")){
+                        String teamName=json.getString("team_name");
+                        String creatorUID=json.getString("team_creator_uid");
+                        JSONArray members=json.getJSONArray("members");
+                        ArrayList<TeamPartnerItem> list=new ArrayList<>();
+                        for (int i=0;i<members.length();i++){
+                            JSONObject member=members.getJSONObject(i);
+                            String uid=member.getString("uid");
+                            String nickname=member.getString("nickname");
+                            String portraitUrl=member.getString("portrait_url");
+                            TeamPartnerItem item=new TeamPartnerItem(uid,nickname,portraitUrl);
+                            list.add(item);
+                        }
+                        TeamInformationResultBean bean=new TeamInformationResultBean(teamName,creatorUID,list);
+                        if (onTeamInformationResult!=null){
+                            onTeamInformationResult.onReturnSuccess(bean);
+                        }
+                    }else if (result.equals("not_login")){
+                        restoreLoginSession(context, new OnLoginRestore() {
+                            @Override
+                            public void onSuccess() {
+                                fetchTeamInformation(teamID, context, onTeamInformationResult);
+                            }
+
+                            @Override
+                            public void onFailure() {
+                                if (onTeamInformationResult!=null){
+                                    onTeamInformationResult.onReturnFailure();
+                                }
+                            }
+                        });
+                    }else if (result.equals("not_found")){
+                        if (onTeamInformationResult!=null){
+                            onTeamInformationResult.onReturnNotFound();
+                        }
+                    }
+                    else{
+                        if (onTeamInformationResult!=null){
+                            onTeamInformationResult.onReturnFailure();
+                        }
+                    }
+                }catch (Exception e){
+                    if (onTeamInformationResult!=null){
+                        onTeamInformationResult.onReturnFailure();
+                    }
+                }
+            }
+        });
+    }
+    public interface OnTeamInformationResult{
+        void onReturnFailure();
+        void onReturnNotFound();
+        void onReturnSuccess(TeamInformationResultBean bean);
+    }
+    public static void fetchTeamInvitations(final Context context,final OnTeamInvitationsResult onTeamInformationResult){
+        String uid=((MainApplication)context.getApplicationContext()).getUID();
+        String session=((MainApplication)context.getApplicationContext()).getJSESSIONID();
+        String data="{" +
+                "\"uid\":\""+uid+"\"" +
+                "}";
+        sendOKHttpRequestWithDataAndSession(SERVER_HOST + "/FetchTeamInvitation", data, session, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                if (onTeamInformationResult!=null){
+                    onTeamInformationResult.onReturnFailure();
+                }
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                try {
+                    JSONObject json=new JSONObject(response.body().string());
+                    String result=json.getString("result");
+                    if (result.equals("ok")){
+                        JSONArray array=json.getJSONArray("data");
+                        ArrayList<TeamInvitationItem> list=new ArrayList<>();
+                        for (int i=0;i<array.length();i++){
+                            JSONObject invitation=array.getJSONObject(i);
+                            String teamID=invitation.getString("team_id");
+                            String teamName=invitation.getString("team_name");
+                            String fromUserName=invitation.getString("from_user");
+                            String fromPotrait=invitation.getString("from_portrait");
+                            boolean agreed=invitation.getBoolean("agreed");
+                            TeamInvitationItem item=new TeamInvitationItem(teamID,teamName,fromUserName,fromPotrait,agreed);
+                            list.add(item);
+                        }
+                        TeamInvitationResultBean bean=new TeamInvitationResultBean(list);
+                        if (onTeamInformationResult!=null){
+                            onTeamInformationResult.onReturnSuccess(bean);
+                        }
+                    }else if (result.equals("not_login")){
+                        restoreLoginSession(context, new OnLoginRestore() {
+                            @Override
+                            public void onSuccess() {
+                                fetchTeamInvitations(context, onTeamInformationResult);
+                            }
+
+                            @Override
+                            public void onFailure() {
+                                if (onTeamInformationResult!=null){
+                                    onTeamInformationResult.onReturnFailure();
+                                }
+                            }
+                        });
+                    }else{
+                        if (onTeamInformationResult!=null){
+                            onTeamInformationResult.onReturnFailure();
+                        }
+                    }
+                }catch (Exception e){
+                    if (onTeamInformationResult!=null){
+                        onTeamInformationResult.onReturnFailure();
+                    }
+                }
+            }
+        });
+    }
+    public interface OnTeamInvitationsResult{
+        void onReturnFailure();
+        void onReturnSuccess(TeamInvitationResultBean bean);
+    }
+    public static void agreeTeamUp(final String teamID, final Context context, final OnCommonResult onCommonResult){
+        String uid=((MainApplication)context.getApplicationContext()).getUID();
+        String session=((MainApplication)context.getApplicationContext()).getJSESSIONID();
+        String data="{" +
+                "\"uid\":\""+uid+"\"," +
+                "\"team_id\":\""+teamID+"\"" +
+                "}";
+        sendOKHttpRequestWithDataAndSession(SERVER_HOST + "/AgreeTeamInvitation", data, session, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                if (onCommonResult!=null){
+                    onCommonResult.onReturnFailure();
+                }
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                try {
+                    JSONObject json=new JSONObject(response.body().string());
+                    String result=json.getString("result");
+                    if (result.equals("ok")) {
+                        if (onCommonResult!=null){
+                            onCommonResult.onReturnSuccess();
+                        }
+                    }else if (result.equals("not_login")){
+                        restoreLoginSession(context, new OnLoginRestore() {
+                            @Override
+                            public void onSuccess() {
+                                agreeTeamUp(teamID, context, onCommonResult);
                             }
 
                             @Override

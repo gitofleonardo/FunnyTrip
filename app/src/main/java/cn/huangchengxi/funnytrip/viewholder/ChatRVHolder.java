@@ -17,6 +17,7 @@ public class ChatRVHolder extends RecyclerView.ViewHolder {
     public ImageView rightPortrait;
     public TextView leftText;
     public TextView rightText;
+    public ImageView sending;
 
     public ChatRVHolder(@NonNull View itemView) {
         super(itemView);
@@ -26,5 +27,6 @@ public class ChatRVHolder extends RecyclerView.ViewHolder {
         rightPortrait=itemView.findViewById(R.id.my_portrait);
         leftText=itemView.findViewById(R.id.sender_text);
         rightText=itemView.findViewById(R.id.my_text);
+        sending=itemView.findViewById(R.id.sending_img);
     }
 }

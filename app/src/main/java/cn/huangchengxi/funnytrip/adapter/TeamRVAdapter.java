@@ -33,8 +33,7 @@ public class TeamRVAdapter extends RecyclerView.Adapter<TeamRVHolder> {
     public void onBindViewHolder(@NonNull TeamRVHolder holder, final int position) {
         TeamItem item=list.get(position);
         holder.teamName.setText(item.getTeamName());
-        holder.hasMsg.setText(item.isHasMsg()?"有新的消息":"暂时没有新消息");
-        holder.latestMsg.setText(item.getLatestMsg());
+        holder.hasMsg.setText(item.getFormattedDate());
         int colorIndex=(int)(Math.random()*(colors.length-1));
         holder.leftBar.setBackgroundColor(colors[colorIndex]);
         holder.container.setOnClickListener(new View.OnClickListener() {

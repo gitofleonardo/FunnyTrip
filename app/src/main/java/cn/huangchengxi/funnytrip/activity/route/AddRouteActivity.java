@@ -359,6 +359,7 @@ public class AddRouteActivity extends BaseAppCompatActivity {
             public void afterTextChanged(Editable s) {
                 isFromAutoFill=false;
                 if (city!=null){
+                    adapter.clear();
                     suggestionSearch.requestSuggestion(new SuggestionSearchOption().city(city).keyword(s.toString()));
                 }
             }

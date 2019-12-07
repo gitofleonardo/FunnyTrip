@@ -1,29 +1,26 @@
 package cn.huangchengxi.funnytrip.item;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class TeamItem {
     private String teamId;
-    private boolean hasMsg;
-    private String latestMsg;
+    private long time;
     private String teamName;
 
-    public TeamItem(String teamId,String teamName,boolean hasMsg,String latestMsg){
-        this.hasMsg=hasMsg;
-        this.latestMsg=latestMsg;
+    public TeamItem(String teamId,String teamName,long time){
+        this.time=time;
         this.teamId=teamId;
         this.teamName=teamName;
     }
 
-    public String getLatestMsg() {
-        return latestMsg;
+    public String getFormattedDate(){
+        return new SimpleDateFormat("yyyy-MM-dd").format(new Date(time));
     }
-
     public String getTeamId() {
         return teamId;
     }
 
-    public boolean isHasMsg() {
-        return hasMsg;
-    }
 
     public String getTeamName() {
         return teamName;

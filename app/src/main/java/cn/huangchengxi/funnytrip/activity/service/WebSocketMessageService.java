@@ -16,7 +16,6 @@ import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.core.app.NotificationCompat;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +23,7 @@ import org.json.JSONObject;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.broadcast.MessageSocketStateReceiver;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import okhttp3.Response;
@@ -36,20 +36,14 @@ public class WebSocketMessageService extends Service {
     private boolean isAbleToSendMessage=false;
     private String uid;
     private String password;
-    private SqliteHelper helper;
-    private SQLiteDatabase db;
     private Thread heartBeatThread;
     private final String heartBeat="{" +
             "\"type\":\"heart_beat\"" +
             "}";
-
     private final int SEND_HEART_BEAT=0;
-    private boolean onCloseAutoConnect=true;
-
     private MyHandler myHandler=new MyHandler();
+    public WebSocketMessageService() {}
 
-    public WebSocketMessageService() {
-    }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         return super.onStartCommand(intent, flags, startId);
@@ -66,12 +60,7 @@ public class WebSocketMessageService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        initDatabase();
         return this.binder;
-    }
-    private void initDatabase(){
-        helper=new SqliteHelper(this,"messages",null,1);
-        db=helper.getWritableDatabase();
     }
     public void requestConnection(){
         if (webSocket!=null){
@@ -104,6 +93,10 @@ public class WebSocketMessageService extends Service {
                     }
                 });
                 heartBeatThread.start();
+
+                Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
+                intent.putExtra("state", MessageSocketStateReceiver.STATE_CONNECTED);
+                sendBroadcast(intent);
             }
             @Override
             public void onMessage(@NotNull WebSocket webSocket, @NotNull String text) {
@@ -137,14 +130,18 @@ public class WebSocketMessageService extends Service {
                 super.onClosed(webSocket, code, reason);
                 isAbleToSendMessage=false;
                 WebSocketMessageService.this.webSocket=null;
-                if (onCloseAutoConnect){
-                    requestConnection();
-                }
+
+                Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
+                intent.putExtra("state", MessageSocketStateReceiver.STATE_DISCONNECTED);
+                sendBroadcast(intent);
             }
             @Override
             public void onFailure(@NotNull WebSocket webSocket, @NotNull Throwable t, @Nullable Response response) {
                 super.onFailure(webSocket, t, response);
                 isAbleToSendMessage=false;
+                Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
+                intent.putExtra("state", MessageSocketStateReceiver.STATE_DISCONNECTED);
+                sendBroadcast(intent);
             }
         });
     }
@@ -155,7 +152,10 @@ public class WebSocketMessageService extends Service {
                 callback.onSuccess();
             }
         }else{
-            
+            if (callback!=null){
+                callback.onError();
+            }
+            requestConnection();
         }
     }
     public void sendAddFriendMessage(String jsonString,OnMessageCallback callback){
@@ -167,7 +167,15 @@ public class WebSocketMessageService extends Service {
                 callback.onSuccess();
             }
         }else{
-
+            if (callback!=null){
+                callback.onError();
+            }
+            requestConnection();
+        }
+    }
+    public void closeConnection(){
+        if (webSocket!=null){
+            webSocket.close(1000,null);
         }
     }
     public void sendValidate(){
@@ -198,13 +206,21 @@ public class WebSocketMessageService extends Service {
     private void updateLocalMessage(JSONObject json){
         try {
             String tmpId=json.getString("message_id");
+            Log.e("returnMessage",json.toString());
             long time=json.getLong("time");
             SqliteHelper helper=new SqliteHelper(this,"messages",null,1);
             SQLiteDatabase db=helper.getWritableDatabase();
-            db.execSQL("update messages set create_time="+time+",sent=true where message_id=\""+tmpId+"\"");
+            db.execSQL("update messages set create_time="+time+",sent=1 where message_id=\""+tmpId+"\"");
+            sendBroadcastForMessageSent(tmpId);
         }catch (Exception e){
             Log.e("return message",e.toString());
         }
+    }
+    private void sendBroadcastForMessageSent(String messageID){
+        Intent intent=new Intent("cn.huangchengxi.funnytrip.MESSAGE_RECEIVER");
+        intent.putExtra("message_id",messageID);
+        intent.putExtra("is_return_message",true);
+        sendBroadcast(intent);
     }
     public boolean insertIfNotExisted(JSONObject json){
         try{
@@ -219,15 +235,17 @@ public class WebSocketMessageService extends Service {
             if (cursor.moveToFirst()){
                 return false;
             }
-            db.execSQL("insert into messages values(\""+fromUID+"\",\""+to_uid+"\","+time+",\""+content+"\",false,\""+messageID+"\",false)");
+            db.execSQL("insert into messages values(\""+fromUID+"\",\""+to_uid+"\","+time+",\""+content+"\",0,\""+messageID+"\",0)");
 
             sendNotification(content);
 
             Intent intent=new Intent("cn.huangchengxi.funnytrip.MESSAGE_RECEIVER");
             intent.putExtra("content",content);
+            intent.putExtra("is_return_message",false);
             intent.putExtra("from_uid",fromUID);
             intent.putExtra("to_uid",to_uid);
             intent.putExtra("time",time);
+            intent.putExtra("message_id",messageID);
             intent.putExtra("fromActivity","WebSocketMessageService");
             sendBroadcast(intent);
 
@@ -249,10 +267,6 @@ public class WebSocketMessageService extends Service {
             Notification notification=new Notification.Builder(context).setSmallIcon(R.drawable.icon).setContentText("收到一条消息").setContentText(message).build();
             ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(1,notification);
         }
-    }
-
-    public void setOnCloseAutoConnect(boolean onCloseAutoConnect) {
-        this.onCloseAutoConnect = onCloseAutoConnect;
     }
 
     private class MyHandler extends Handler{

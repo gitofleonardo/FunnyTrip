@@ -108,14 +108,14 @@ public class ChattingActivity extends AppCompatActivity {
                     binder.getService().sendMessage(data, new WebSocketMessageService.OnMessageCallback() {
                         @Override
                         public void onError() {
-
+                            Toast.makeText(ChattingActivity.this, "发送失败", Toast.LENGTH_SHORT).show();
                         }
                         @Override
                         public void onSuccess() {
                             //Toast.makeText(ChattingActivity.this, "发送成功", Toast.LENGTH_SHORT).show();
                         }
                     });
-                    ChatMessageItem item=new ChatMessageItem(content.getText().toString(),uid,myPortraitUrl,new Date().getTime(),false);
+                    ChatMessageItem item=new ChatMessageItem(tmpId,content.getText().toString(),uid,myPortraitUrl,new Date().getTime(),false,false);
                     content.setText("");
                     if (list.size()>0){
                         list.add(list.size(),item);
@@ -191,12 +191,22 @@ public class ChattingActivity extends AppCompatActivity {
         receiver=new MessageReceiver();
         receiver.setOnMessageReceived(new MessageReceiver.OnMessageReceived() {
             @Override
-            public void OnReveived(String fromUID, String toUID, String content, long time,String context) {
+            public void OnReveived(String messageID,String fromUID, String toUID, String content, long time,String context) {
                 if (!context.equals("ChattingActivity")){
-                    ChatMessageItem item=new ChatMessageItem(content,fromUID,hisPortraitUrl,time,true);
+                    ChatMessageItem item=new ChatMessageItem(messageID,content,fromUID,hisPortraitUrl,time,true,true);
                     list.add(list.size()-1,item);
                     adapter.notifyItemInserted(list.size()-1);
                     recyclerView.scrollToPosition(list.size()-1);
+                }
+            }
+            @Override
+            public void onSuccessSent(String messageID) {
+                for (int i=0;i<list.size();i++){
+                    if (list.get(i).getMessageId().equals(messageID)){
+                        list.get(i).setSent(true);
+                        adapter.notifyItemChanged(i);
+                        break;
+                    }
                 }
             }
         });
@@ -245,6 +255,7 @@ public class ChattingActivity extends AppCompatActivity {
                 String content=cursor.getString(cursor.getColumnIndex("content"));
                 long time=cursor.getLong(cursor.getColumnIndex("create_time"));
                 String fromUID=cursor.getString(cursor.getColumnIndex("from_uid"));
+                String messageID=cursor.getString(cursor.getColumnIndex("message_id"));
 
                 if (fromUID.equals(myUID)){
                     Cursor cursor1=db1.query("local_users",null,"uid=?",new String[]{myUID},null,null,null);
@@ -253,7 +264,7 @@ public class ChattingActivity extends AppCompatActivity {
                         portraitUrl=cursor1.getString(cursor1.getColumnIndex("portrait_url"));
                         myPortraitUrl=portraitUrl;
                     }
-                    ChatMessageItem item=new ChatMessageItem(content,myUID,portraitUrl,time,false);
+                    ChatMessageItem item=new ChatMessageItem(messageID,content,myUID,portraitUrl,time,false,true);
                     items.add(item);
                 }else{
                     Cursor cursor1=db1.query("local_users",null,"uid=?",new String[]{fromUID},null,null,null);
@@ -264,7 +275,7 @@ public class ChattingActivity extends AppCompatActivity {
                         name=cursor1.getString(cursor1.getColumnIndex("nickname"));
                         hisPortraitUrl=portraitUrl;
                     }
-                    ChatMessageItem item=new ChatMessageItem(content,fromUID,portraitUrl,time,true);
+                    ChatMessageItem item=new ChatMessageItem(messageID,content,fromUID,portraitUrl,time,true,true);
                     items.add(item);
                     if (name!=null){
                         ChattingActivity.this.name.setText(name);
@@ -295,6 +306,7 @@ public class ChattingActivity extends AppCompatActivity {
                 String content=cursor.getString(cursor.getColumnIndex("content"));
                 long time=cursor.getLong(cursor.getColumnIndex("create_time"));
                 String fromUID=cursor.getString(cursor.getColumnIndex("from_uid"));
+                String messageID=cursor.getString(cursor.getColumnIndex("message_id"));
                 if (fromUID.equals(myUID)){
                     Cursor cursor1=db1.query("local_users",null,"uid=?",new String[]{myUID},null,null,null);
                     String portraitUrl="";
@@ -302,7 +314,7 @@ public class ChattingActivity extends AppCompatActivity {
                         portraitUrl=cursor1.getString(cursor1.getColumnIndex("portrait_url"));
                         myPortraitUrl=portraitUrl;
                     }
-                    ChatMessageItem item=new ChatMessageItem(content,myUID,portraitUrl,time,false);
+                    ChatMessageItem item=new ChatMessageItem(messageID,content,myUID,portraitUrl,time,false,true);
                     items.add(item);
                 }else{
                     Cursor cursor1=db1.query("local_users",null,"uid=?",new String[]{fromUID},null,null,null);
@@ -311,7 +323,7 @@ public class ChattingActivity extends AppCompatActivity {
                         portraitUrl=cursor1.getString(cursor1.getColumnIndex("portrait_url"));
                         hisPortraitUrl=portraitUrl;
                     }
-                    ChatMessageItem item=new ChatMessageItem(content,fromUID,portraitUrl,time,true);
+                    ChatMessageItem item=new ChatMessageItem(messageID,content,fromUID,portraitUrl,time,true,true);
                     items.add(item);
                 }
                 Log.e("localMessage",fromUID+":"+content+":");

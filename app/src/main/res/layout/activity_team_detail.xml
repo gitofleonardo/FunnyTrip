@@ -44,7 +44,6 @@
                 <TextView
                     android:textSize="30dp"
                     android:gravity="center"
-                    android:text="name"
                     android:id="@+id/team_name"
                     android:layout_margin="20dp"
                     android:layout_gravity="center"
@@ -73,6 +72,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
             <androidx.cardview.widget.CardView
+                android:visibility="gone"
                 android:id="@+id/invite_new"
                 android:foreground="?selectableItemBackground"
                 android:layout_marginTop="10dp"
@@ -85,6 +85,7 @@
                     android:layout_height="match_parent"/>
             </androidx.cardview.widget.CardView>
             <androidx.cardview.widget.CardView
+                android:visibility="gone"
                 android:id="@+id/exit_team"
                 android:foreground="?selectableItemBackground"
                 android:layout_marginTop="10dp"

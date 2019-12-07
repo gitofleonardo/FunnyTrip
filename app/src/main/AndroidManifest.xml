@@ -22,7 +22,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".activity.team.TeamInvitationActivity"></activity>
+        <receiver
+            android:name=".broadcast.MessageSocketStateReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="cn.huangchengxi.funnytrip.ON_STATE_CHANGE"/>
+            </intent-filter>
+        </receiver>
+
+        <activity android:name=".activity.team.TeamInvitationActivity" />
 
         <receiver
             android:name=".broadcast.MessageReceiver"

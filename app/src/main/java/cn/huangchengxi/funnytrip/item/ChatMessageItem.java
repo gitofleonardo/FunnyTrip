@@ -5,18 +5,22 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class ChatMessageItem {
+    private String messageId;
     private String content;
     private String userId;
     private String portraitUrl;
     private long time;
     private boolean isReceived;
+    private boolean sent;
 
-    public ChatMessageItem(String content,String userId,String portraitUrl,long time,boolean isReceived){
+    public ChatMessageItem(String messageId,String content,String userId,String portraitUrl,long time,boolean isReceived,boolean isSent){
         this.content=content;
         this.userId=userId;
         this.time=time;
         this.isReceived=isReceived;
         this.portraitUrl=portraitUrl;
+        this.messageId=messageId;
+        this.sent=isSent;
     }
 
     public String getContent() {
@@ -58,5 +62,21 @@ public class ChatMessageItem {
 
     public boolean isReceived() {
         return isReceived;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
+
+    public void setSent(boolean sent) {
+        this.sent = sent;
+    }
+
+    public boolean isSent() {
+        return sent;
     }
 }

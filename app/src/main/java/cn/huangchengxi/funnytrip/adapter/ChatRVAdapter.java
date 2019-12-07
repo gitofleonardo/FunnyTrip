@@ -44,7 +44,7 @@ public class ChatRVAdapter extends RecyclerView.Adapter<ChatRVHolder> {
                 }
             });
             if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
-                Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.leftPortrait);
+                Glide.with(context).load(HttpHelper.PIC_SERVER_HOST+item.getPortraitUrl()).into(holder.leftPortrait);
             }else{
                 holder.leftPortrait.setImageResource(R.drawable.portrait);
             }
@@ -61,9 +61,15 @@ public class ChatRVAdapter extends RecyclerView.Adapter<ChatRVHolder> {
                 }
             });
             if (item.getPortraitUrl()!=null && !item.getPortraitUrl().equals("") && !item.getPortraitUrl().equals("null")){
-                Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.rightPortrait);
+                Glide.with(context).load(HttpHelper.PIC_SERVER_HOST+item.getPortraitUrl()).into(holder.rightPortrait);
             }else{
                 holder.rightPortrait.setImageResource(R.drawable.portrait);
+            }
+            if (item.isSent()){
+                holder.sending.setVisibility(View.GONE);
+            }else{
+                Glide.with(context).load(R.drawable.loading).into(holder.sending);
+                holder.sending.setVisibility(View.VISIBLE);
             }
         }
     }

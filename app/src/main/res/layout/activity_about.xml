@@ -62,7 +62,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 app:main="致谢"
-                app:sub="百度地图开放平台"
+                app:sub="百度地图开放平台\n刘洋参与服务器开发"
                 android:foreground="?selectableItemBackground"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>

@@ -41,7 +41,7 @@ public class FriendSearchResultAdapter extends RecyclerView.Adapter<FriendSearch
                 }
             }
         });
-        Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
+        Glide.with(context).load(HttpHelper.PIC_SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
     }
 
     @Override

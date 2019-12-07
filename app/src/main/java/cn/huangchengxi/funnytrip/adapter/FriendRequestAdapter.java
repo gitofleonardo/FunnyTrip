@@ -40,7 +40,7 @@ public class FriendRequestAdapter extends RecyclerView.Adapter<FriendRequestHold
         holder.name.setText(item.getName());
         holder.message.setText(item.getMessage());
         holder.agreeButton.setEnabled(!item.isAgreed());
-        Glide.with(context).load(HttpHelper.SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
+        Glide.with(context).load(HttpHelper.PIC_SERVER_HOST+item.getPortraitUrl()).into(holder.portrait);
         holder.portrait.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

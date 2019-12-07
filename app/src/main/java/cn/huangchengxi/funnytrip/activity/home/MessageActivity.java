@@ -25,6 +25,7 @@ import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.friend.ChattingActivity;
 import cn.huangchengxi.funnytrip.activity.friend.FriendInvitationsActivity;
 import cn.huangchengxi.funnytrip.activity.service.WebSocketMessageService;
+import cn.huangchengxi.funnytrip.activity.team.TeamInvitationActivity;
 import cn.huangchengxi.funnytrip.adapter.MesssageRVAdapter;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.broadcast.MessageReceiver;
@@ -92,7 +93,7 @@ public class MessageActivity extends AppCompatActivity {
         systemMsg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                startActivity(new Intent(MessageActivity.this, TeamInvitationActivity.class));
             }
         });
         replyMe=findViewById(R.id.reply);
@@ -114,7 +115,7 @@ public class MessageActivity extends AppCompatActivity {
         receiver=new MessageReceiver();
         receiver.setOnMessageReceived(new MessageReceiver.OnMessageReceived() {
             @Override
-            public void OnReveived(String fromUID, String toUID, String content, long time,String context) {
+            public void OnReveived(String messageID,String fromUID, String toUID, String content, long time,String context) {
                 for (int i=0;i<list.size();i++){
                     if (list.get(i).getHisID().equals(fromUID) && ((MainApplication)getApplicationContext()).getUID().equals(toUID)){
                         list.get(i).setLatestContent(content);
@@ -136,6 +137,10 @@ public class MessageActivity extends AppCompatActivity {
                 MessageItem item=new MessageItem(fromUID,content,fromUID,time,"");
                 list.add(0,item);
                 adapter.notifyItemInserted(0);
+            }
+            @Override
+            public void onSuccessSent(String messageID) {
+
             }
         });
         IntentFilter intentFilter=new IntentFilter("cn.huangchengxi.funnytrip.MESSAGE_RECEIVER");

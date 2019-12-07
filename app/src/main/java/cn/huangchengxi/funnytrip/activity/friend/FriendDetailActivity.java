@@ -137,7 +137,7 @@ public class FriendDetailActivity extends BaseAppCompatActivity {
                         break;
                     case FETCH_SUCCESS:
                         if (!userInformationBean.getPortraitUrl().equals("null")){
-                            Glide.with(FriendDetailActivity.this).load(HttpHelper.SERVER_HOST+userInformationBean.getPortraitUrl()).into(portrait);
+                            Glide.with(FriendDetailActivity.this).load(HttpHelper.PIC_SERVER_HOST+userInformationBean.getPortraitUrl()).into(portrait);
                         }
                         if (userInformationBean.getNickname().equals("null")){
                             name.setText(userId);
