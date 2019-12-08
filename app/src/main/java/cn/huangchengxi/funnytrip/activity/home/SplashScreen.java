@@ -130,7 +130,7 @@ public class SplashScreen extends BaseAppCompatActivity {
         loadingText=findViewById(R.id.loading_text);
         wSplashImg=findViewById(R.id.splash_img);
         //载入封面
-        //Glide.with(this).load(R.raw.splash).into(wSplashImg);
+        Glide.with(this).load(R.raw.splash).into(wSplashImg);
         Glide.with(this).load(R.drawable.loading).into(loading);
     }
     private void requestPermission(){
