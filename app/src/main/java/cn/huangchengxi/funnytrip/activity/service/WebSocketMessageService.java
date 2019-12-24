@@ -24,24 +24,28 @@ import org.json.JSONObject;
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.broadcast.MessageSocketStateReceiver;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
-public class WebSocketMessageService extends Service {
+public class WebSocketMessageService extends Service implements AppHandler.OnHandleMessage{
     private WebSocketClientBinder binder=new WebSocketClientBinder();
     private WebSocket webSocket;
     private boolean isAbleToSendMessage=false;
     private String uid;
     private String password;
     private Thread heartBeatThread;
+    private boolean isConnecting=false;
+
     private final String heartBeat="{" +
             "\"type\":\"heart_beat\"" +
             "}";
     private final int SEND_HEART_BEAT=0;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
     public WebSocketMessageService() {}
 
     @Override
@@ -70,80 +74,86 @@ public class WebSocketMessageService extends Service {
             heartBeatThread.interrupt();
             heartBeatThread=null;
         }
-        HttpHelper.connectToMessagePusher(new WebSocketListener() {
-            @Override
-            public void onOpen(@NotNull final WebSocket webSocket, @NotNull Response response) {
-                super.onOpen(webSocket, response);
-                WebSocketMessageService.this.webSocket=webSocket;
-                sendValidate();
-                heartBeatThread=new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try{
-                            while (!Thread.currentThread().isInterrupted()){
-                                Log.e("interrupt",webSocket.toString());
-                                Thread.sleep(5000);
-                                Message msg=myHandler.obtainMessage();
-                                msg.what=SEND_HEART_BEAT;
-                                myHandler.sendMessage(msg);
+        if (!isConnecting){
+            isConnecting=true;
+            HttpHelper.connectToMessagePusher(new WebSocketListener() {
+                @Override
+                public void onOpen(@NotNull final WebSocket webSocket, @NotNull Response response) {
+                    super.onOpen(webSocket, response);
+                    WebSocketMessageService.this.webSocket=webSocket;
+                    sendValidate();
+                    heartBeatThread=new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try{
+                                while (!Thread.currentThread().isInterrupted()){
+                                    Log.e("interrupt",webSocket.toString());
+                                    Thread.sleep(5000);
+                                    Message msg=myHandler.obtainMessage();
+                                    msg.what=SEND_HEART_BEAT;
+                                    myHandler.sendMessage(msg);
+                                }
+                            }catch (Exception e){
+                                Log.e("interrupt",e.toString());
                             }
-                        }catch (Exception e){
-                            Log.e("interrupt",e.toString());
                         }
-                    }
-                });
-                heartBeatThread.start();
+                    });
+                    heartBeatThread.start();
 
-                Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
-                intent.putExtra("state", MessageSocketStateReceiver.STATE_CONNECTED);
-                sendBroadcast(intent);
-            }
-            @Override
-            public void onMessage(@NotNull WebSocket webSocket, @NotNull String text) {
-                super.onMessage(webSocket, text);
-                Log.e("onMessageReceived",text);
-                try{
-                    JSONObject json=new JSONObject(text);
-                    String type=json.getString("type");
-                    if (type.equals("validate_success")){
-                        isAbleToSendMessage=true;
-                        fetchUnread();
-                    }else if (type.equals("validate_failed")){
-                        isAbleToSendMessage=false;
-                    }else if (type.equals("request_friend")){
-                        Toast.makeText(WebSocketMessageService.this, "收到好友请求", Toast.LENGTH_SHORT).show();
-                    }else if (type.equals("message")){
-                        insertIfNotExisted(json);
-                    }else if (type.equals("return_message")){
-                        updateLocalMessage(json);
-                    }
-                    else{
-                        Toast.makeText(WebSocketMessageService.this, "收到一条消息:"+text, Toast.LENGTH_SHORT).show();
-                        Log.e("message",text);
-                    }
-                }catch (Exception e){
-                    Log.e("text received",text);
+                    Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
+                    intent.putExtra("state", MessageSocketStateReceiver.STATE_CONNECTED);
+                    sendBroadcast(intent);
+                    isConnecting=false;
                 }
-            }
-            @Override
-            public void onClosed(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
-                super.onClosed(webSocket, code, reason);
-                isAbleToSendMessage=false;
-                WebSocketMessageService.this.webSocket=null;
+                @Override
+                public void onMessage(@NotNull WebSocket webSocket, @NotNull String text) {
+                    super.onMessage(webSocket, text);
+                    Log.e("onMessageReceived",text);
+                    try{
+                        JSONObject json=new JSONObject(text);
+                        String type=json.getString("type");
+                        if (type.equals("validate_success")){
+                            isAbleToSendMessage=true;
+                            fetchUnread();
+                        }else if (type.equals("validate_failed")){
+                            isAbleToSendMessage=false;
+                        }else if (type.equals("request_friend")){
+                            Toast.makeText(WebSocketMessageService.this, "收到好友请求", Toast.LENGTH_SHORT).show();
+                        }else if (type.equals("message")){
+                            insertIfNotExisted(json);
+                        }else if (type.equals("return_message")){
+                            updateLocalMessage(json);
+                        }
+                        else{
+                            Toast.makeText(WebSocketMessageService.this, "收到一条消息:"+text, Toast.LENGTH_SHORT).show();
+                            Log.e("message",text);
+                        }
+                    }catch (Exception e){
+                        Log.e("text received",text);
+                    }
+                }
+                @Override
+                public void onClosed(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
+                    super.onClosed(webSocket, code, reason);
+                    isAbleToSendMessage=false;
+                    WebSocketMessageService.this.webSocket=null;
 
-                Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
-                intent.putExtra("state", MessageSocketStateReceiver.STATE_DISCONNECTED);
-                sendBroadcast(intent);
-            }
-            @Override
-            public void onFailure(@NotNull WebSocket webSocket, @NotNull Throwable t, @Nullable Response response) {
-                super.onFailure(webSocket, t, response);
-                isAbleToSendMessage=false;
-                Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
-                intent.putExtra("state", MessageSocketStateReceiver.STATE_DISCONNECTED);
-                sendBroadcast(intent);
-            }
-        });
+                    Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
+                    intent.putExtra("state", MessageSocketStateReceiver.STATE_DISCONNECTED);
+                    sendBroadcast(intent);
+                    isConnecting=false;
+                }
+                @Override
+                public void onFailure(@NotNull WebSocket webSocket, @NotNull Throwable t, @Nullable Response response) {
+                    super.onFailure(webSocket, t, response);
+                    isAbleToSendMessage=false;
+                    Intent intent=new Intent("cn.huangchengxi.funnytrip.ON_STATE_CHANGE");
+                    intent.putExtra("state", MessageSocketStateReceiver.STATE_DISCONNECTED);
+                    sendBroadcast(intent);
+                    isConnecting=false;
+                }
+            });
+        }
     }
     public void sendMessage(String jsonString,OnMessageCallback callback){
         if (webSocket!=null && isAbleToSendMessage){
@@ -269,16 +279,12 @@ public class WebSocketMessageService extends Service {
         }
     }
 
-    private class MyHandler extends Handler{
-        @Override
-        public void handleMessage(Message msg) {
-            try{
-                switch (msg.what){
-                    case SEND_HEART_BEAT:
-                        webSocket.send(heartBeat);
-                        break;
-                }
-            }catch (Exception e){}
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case SEND_HEART_BEAT:
+                webSocket.send(heartBeat);
+                break;
         }
     }
 }

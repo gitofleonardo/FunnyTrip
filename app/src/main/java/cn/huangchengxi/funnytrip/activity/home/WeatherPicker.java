@@ -31,13 +31,14 @@ import java.util.Stack;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.adapter.PositionRVAdapter;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.WeatherItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class WeatherPicker extends AppCompatActivity {
+public class WeatherPicker extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private RecyclerView recyclerView;
     private PositionRVAdapter adapter;
     private Toolbar toolbar;
@@ -48,7 +49,8 @@ public class WeatherPicker extends AppCompatActivity {
     private String weatherID;
     private Stack<String> backStack;
     private SwipeRefreshLayout srl;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private String address="http://guolin.tech/api/china";
     private String currentAddress="http://guolin.tech/api/china";
@@ -104,19 +106,25 @@ public class WeatherPicker extends AppCompatActivity {
         });
         requestForPosition(address);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case 1:
+                adapter.notifyDataSetChanged();
+                srl.setRefreshing(false);
+                break;
+            case 2:
+                Toast.makeText(WeatherPicker.this, "获取数据失败", Toast.LENGTH_SHORT).show();
+                srl.setRefreshing(false);
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(@NonNull Message msg) {
-            switch (msg.what){
-                case 1:
-                    adapter.notifyDataSetChanged();
-                    srl.setRefreshing(false);
-                    break;
-                case 2:
-                    Toast.makeText(WeatherPicker.this, "获取数据失败", Toast.LENGTH_SHORT).show();
-                    srl.setRefreshing(false);
-                    break;
-            }
+
         }
     }
     private void requestForPosition(String address){

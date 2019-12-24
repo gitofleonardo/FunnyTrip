@@ -44,7 +44,6 @@
             android:id="@+id/hm_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
-
         <ImageView
             android:layout_width="349dp"
             android:layout_height="300dp"

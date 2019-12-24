@@ -15,6 +15,8 @@ public class AboutActivity extends AppCompatActivity {
     private AboutOption homepage;
     private AboutOption mail;
     private ImageView back;
+    private AboutOption github;
+    private AboutOption thisGithub;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +48,24 @@ public class AboutActivity extends AppCompatActivity {
                 Intent intent = new Intent(Intent.ACTION_SENDTO);
                 intent.setData(Uri.parse("mailto:971840889@qq.com"));
                 startActivity(Intent.createChooser(intent, "发送邮件"));
+            }
+        });
+        github=findViewById(R.id.my_github);
+        github.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri=Uri.parse("https://github.com/gitofleonardo");
+                Intent intent=new Intent(Intent.ACTION_VIEW,uri);
+                startActivity(intent);
+            }
+        });
+        thisGithub=findViewById(R.id.my_funntrip_github);
+        thisGithub.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri=Uri.parse("https://github.com/gitofleonardo/FunnyTrip");
+                Intent intent=new Intent(Intent.ACTION_VIEW,uri);
+                startActivity(intent);
             }
         });
     }

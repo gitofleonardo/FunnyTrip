@@ -25,6 +25,7 @@ import cn.huangchengxi.funnytrip.activity.account.ChangePasswordActivity;
 import cn.huangchengxi.funnytrip.activity.home.LoginActivity;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.UserPropertiesBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.view.OptionView;
 import cn.huangchengxi.funnytrip.view.SwitchOptionView;
@@ -32,10 +33,11 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class AccountSecurityFragment extends Fragment {
+public class AccountSecurityFragment extends Fragment implements AppHandler.OnHandleMessage{
     private OnFragmentInteractionListener mListener;
     
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
     private SwitchOptionView allowUnknownViewMoments;
     private SwitchOptionView allowFriendViewMoments;
     private SwitchOptionView allowUnknownComment;
@@ -126,25 +128,31 @@ public class AccountSecurityFragment extends Fragment {
         showInterest.setSwitchButton(bean.isShowInterest());
         addChangeListener();
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        if (onCommitChangesListener!=null){
+            onCommitChangesListener.onFinish();
+        }
+        switch (msg.what){
+            case CHANGE_PROPERTY_SUCCESS:
+                addChangeListener();
+                break;
+            case CONNECTION_FAILED:
+                Toast.makeText(getContext(), "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                SwitchOptionView sov1=getView().findViewById(msg.arg1);
+                if (sov1!=null){
+                    sov1.setSwitchButton(!sov1.getSwitchState());
+                }
+                addChangeListener();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            if (onCommitChangesListener!=null){
-                onCommitChangesListener.onFinish();
-            }
-            switch (msg.what){
-                case CHANGE_PROPERTY_SUCCESS:
-                    addChangeListener();
-                    break;
-                case CONNECTION_FAILED:
-                    Toast.makeText(getContext(), "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    SwitchOptionView sov1=getView().findViewById(msg.arg1);
-                    if (sov1!=null){
-                        sov1.setSwitchButton(!sov1.getSwitchState());
-                    }
-                    addChangeListener();
-                    break;
-            }
+
         }
     }
     private void changeProperty(String property, boolean value, final int switchId){

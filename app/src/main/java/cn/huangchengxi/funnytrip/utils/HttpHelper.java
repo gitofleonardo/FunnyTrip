@@ -3,18 +3,22 @@ package cn.huangchengxi.funnytrip.utils;
 import android.content.Context;
 import android.util.Log;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import cn.huangchengxi.funnytrip.activity.home.MainActivity;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.ClocksResultBean;
 import cn.huangchengxi.funnytrip.databean.FriendBean;
@@ -43,6 +47,7 @@ import cn.huangchengxi.funnytrip.item.TeamItem;
 import cn.huangchengxi.funnytrip.item.TeamPartnerItem;
 import cn.huangchengxi.funnytrip.item.TipsItem;
 import cn.huangchengxi.funnytrip.utils.sqlite.LocalUsersUpdate;
+import kotlin.Suppress;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -52,6 +57,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.WebSocketListener;
+@SuppressWarnings("all")
 
 public class HttpHelper {
     private HttpHelper(){}
@@ -67,6 +73,7 @@ public class HttpHelper {
     public static void sendOKHttpRequestWithData(String host,String json,Callback callback){
         try{
             OkHttpClient client=new OkHttpClient();
+
             RequestBody body=RequestBody.create(json.getBytes("utf-8"));
             Request request=new Request.Builder().url(host).method("POST",body).build();
             client.newCall(request).enqueue(callback);
@@ -782,7 +789,7 @@ public class HttpHelper {
                         if (onMomentsResult!=null){
                             onMomentsResult.onReturnSuccess(bean);
                         }
-                    }else if (result.equals("not_allow")){
+                    }else if (result.equals("not_login")){
                         restoreLoginSession(context, new OnLoginRestore() {
                             @Override
                             public void onSuccess() {
@@ -795,7 +802,12 @@ public class HttpHelper {
                                 }
                             }
                         });
-                    }else{
+                    }else if (result.equals("not_allow")){
+                        if (onMomentsResult!=null){
+                            onMomentsResult.onReturnNotAllowed();
+                        }
+                    }
+                    else{
                         if (onMomentsResult!=null){
                             onMomentsResult.onReturnFailure();
                         }
@@ -812,6 +824,7 @@ public class HttpHelper {
     public interface OnMomentsResult{
         void onReturnFailure();
         void onReturnSuccess(MomentsBean bean);
+        void onReturnNotAllowed();
     }
     public static void commitShare(final String content, final String imgPath, final Context context, final OnCommitShareResult onCommitShareResult){
         String session=((MainApplication)context.getApplicationContext()).getJSESSIONID();

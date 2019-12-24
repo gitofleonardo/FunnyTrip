@@ -34,6 +34,7 @@ import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
 import cn.huangchengxi.funnytrip.activity.service.WebSocketMessageService;
 import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.ClockItem;
 import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
@@ -44,14 +45,15 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class SplashScreen extends BaseAppCompatActivity {
+public class SplashScreen extends BaseAppCompatActivity implements AppHandler.OnHandleMessage {
     private ImageView loading;
     private TextView loadingText;
     private ImageView wSplashImg;
     private final int thisRQ=0;
     private final int tmCode=0;
     private MyTimerTask myTimerTask;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private final int LOGIN_SUCCESS=2;
     private final int LOGIN_FAILED=1;
@@ -152,25 +154,31 @@ public class SplashScreen extends BaseAppCompatActivity {
             startLogin();
         }
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case tmCode:
+                startLogin();
+                break;
+            case LOGIN_FAILED:
+                Toast.makeText(SplashScreen.this, "登录失败", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(SplashScreen.this,LoginActivity.class));
+                finish();
+                break;
+            case LOGIN_SUCCESS:
+                updateLocalUserDatabaseAndSetAppData();
+                startActivity(new Intent(SplashScreen.this,MainActivity.class));
+                finish();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(@NonNull Message msg) {
             //super.handleMessage(msg);
-            switch (msg.what){
-                case tmCode:
-                    startLogin();
-                    break;
-                case LOGIN_FAILED:
-                    Toast.makeText(SplashScreen.this, "登录失败", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(SplashScreen.this,LoginActivity.class));
-                    finish();
-                    break;
-                case LOGIN_SUCCESS:
-                    updateLocalUserDatabaseAndSetAppData();
-                    startActivity(new Intent(SplashScreen.this,MainActivity.class));
-                    finish();
-                    break;
-            }
+
         }
     }
     private void updateLocalUserDatabaseAndSetAppData(){

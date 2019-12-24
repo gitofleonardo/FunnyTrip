@@ -22,13 +22,14 @@ import java.io.IOException;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.TextValidator;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class ChangePasswordActivity extends AppCompatActivity {
+public class ChangePasswordActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private Toolbar toolbar;
     private ImageView back;
     private EditText password;
@@ -37,7 +38,8 @@ public class ChangePasswordActivity extends AppCompatActivity {
     private EditText code;
     private Button sendCode;
     private Button submit;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
     private AlertDialog processingDialog;
 
     private final int BUTTON_COUNT_DOWN=0;
@@ -168,46 +170,52 @@ public class ChangePasswordActivity extends AppCompatActivity {
             }
         }
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        if (processingDialog!=null && processingDialog.isShowing()){
+            processingDialog.dismiss();
+        }
+        switch (msg.what){
+            case BUTTON_COUNT_DOWN:
+                if (msg.arg1==0){
+                    sendCode.setEnabled(true);
+                    sendCode.setText("发送验证码");
+                }else{
+                    sendCode.setText("发送验证码("+msg.arg1+"s)");
+                }
+                break;
+            case VALIDATE_SENT:
+                AlertDialog.Builder builder=new AlertDialog.Builder(ChangePasswordActivity.this);
+                builder.setMessage("我们已经将验证码发送至您的邮箱，请您查收").setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).show();
+                sendCode.setEnabled(false);
+                new Thread(new CountDownRunnable()).start();
+                break;
+            case CONNECTION_ERROR:
+                Toast.makeText(ChangePasswordActivity.this, "连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                sendCode.setEnabled(true);
+                sendCode.setText("发送验证码");
+                break;
+            case VALIDATE_ERROR:
+                Toast.makeText(ChangePasswordActivity.this, "验证码不正确", Toast.LENGTH_SHORT).show();
+                break;
+            case CHANGE_PASSWORD_SUCCESS:
+                Toast.makeText(ChangePasswordActivity.this, "更改密码成功，请重新登录", Toast.LENGTH_SHORT).show();
+                setResult(CHANGE_PASSWORD_SUCCESS,new Intent());
+                finish();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            if (processingDialog!=null && processingDialog.isShowing()){
-                processingDialog.dismiss();
-            }
-            switch (msg.what){
-                case BUTTON_COUNT_DOWN:
-                    if (msg.arg1==0){
-                        sendCode.setEnabled(true);
-                        sendCode.setText("发送验证码");
-                    }else{
-                        sendCode.setText("发送验证码("+msg.arg1+"s)");
-                    }
-                    break;
-                case VALIDATE_SENT:
-                    AlertDialog.Builder builder=new AlertDialog.Builder(ChangePasswordActivity.this);
-                    builder.setMessage("我们已经将验证码发送至您的邮箱，请您查收").setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.dismiss();
-                        }
-                    }).show();
-                    sendCode.setEnabled(false);
-                    new Thread(new CountDownRunnable()).start();
-                    break;
-                case CONNECTION_ERROR:
-                    Toast.makeText(ChangePasswordActivity.this, "连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    sendCode.setEnabled(true);
-                    sendCode.setText("发送验证码");
-                    break;
-                case VALIDATE_ERROR:
-                    Toast.makeText(ChangePasswordActivity.this, "验证码不正确", Toast.LENGTH_SHORT).show();
-                    break;
-                case CHANGE_PASSWORD_SUCCESS:
-                    Toast.makeText(ChangePasswordActivity.this, "更改密码成功，请重新登录", Toast.LENGTH_SHORT).show();
-                    setResult(CHANGE_PASSWORD_SUCCESS,new Intent());
-                    finish();
-                    break;
-            }
+
         }
     }
 }

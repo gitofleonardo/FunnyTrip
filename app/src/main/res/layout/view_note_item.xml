@@ -39,8 +39,9 @@
                     android:layout_height="wrap_content"/>
             </FrameLayout>
             <TextView
+                android:foreground="?selectableItemBackground"
                 android:background="@color/transparent"
-                android:layout_margin="30dp"
+                android:padding="30dp"
                 android:id="@+id/note_content"
                 android:gravity="center"
                 android:text="your note here"

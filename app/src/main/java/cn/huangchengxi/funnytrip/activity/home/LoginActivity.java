@@ -35,6 +35,7 @@ import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.account.ChangePasswordActivity;
 import cn.huangchengxi.funnytrip.activity.service.WebSocketMessageService;
 import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.TextValidator;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
@@ -42,7 +43,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private EditText account;
     private EditText password;
     private LinearLayout editTextContainer;
@@ -50,7 +51,8 @@ public class LoginActivity extends AppCompatActivity {
     private TextView signUp;
     private TextView forgetPasswd;
     private LinearLayout buttonContainer;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
     private AlertDialog processingDialog;
 
     private final int SIGN_UP_RC=0;
@@ -120,26 +122,32 @@ public class LoginActivity extends AppCompatActivity {
             password.setText(password_d);
         }
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        if (processingDialog!=null && processingDialog.isShowing()){
+            processingDialog.dismiss();
+        }
+        switch (msg.what){
+            case LOGIN_CONNECTION_FAILED:
+                Toast.makeText(LoginActivity.this, "连接失败，清检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case LOGIN_NOT_CORRECT:
+                Toast.makeText(LoginActivity.this, "账号或密码不正确", Toast.LENGTH_SHORT).show();
+                break;
+            case LOGIN_SUCCESS:
+                updateLocalUserDatabaseAndSetAppData();
+                startActivity(new Intent(LoginActivity.this,MainActivity.class));
+                setResult(1,new Intent());
+                finish();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            if (processingDialog!=null && processingDialog.isShowing()){
-                processingDialog.dismiss();
-            }
-            switch (msg.what){
-                case LOGIN_CONNECTION_FAILED:
-                    Toast.makeText(LoginActivity.this, "连接失败，清检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
-                case LOGIN_NOT_CORRECT:
-                    Toast.makeText(LoginActivity.this, "账号或密码不正确", Toast.LENGTH_SHORT).show();
-                    break;
-                case LOGIN_SUCCESS:
-                    updateLocalUserDatabaseAndSetAppData();
-                    startActivity(new Intent(LoginActivity.this,MainActivity.class));
-                    setResult(1,new Intent());
-                    finish();
-                    break;
-            }
+
         }
     }
     private void updateLocalUserDatabaseAndSetAppData(){

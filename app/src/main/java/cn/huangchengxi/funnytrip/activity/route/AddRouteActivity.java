@@ -64,12 +64,13 @@ import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
 import cn.huangchengxi.funnytrip.adapter.BottomPosAdapter;
 import cn.huangchengxi.funnytrip.adapter.SearchResultAdapter;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.PositionItem;
 import cn.huangchengxi.funnytrip.item.RouteItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 
-public class AddRouteActivity extends BaseAppCompatActivity {
+public class AddRouteActivity extends BaseAppCompatActivity implements AppHandler.OnHandleMessage {
     private RecyclerView recyclerView;
     private SearchResultAdapter adapter;
     private EditText searchBar;
@@ -95,7 +96,8 @@ public class AddRouteActivity extends BaseAppCompatActivity {
     private RouteItem routeItem;
 
     private boolean isFromAutoFill=false;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private final int COMMIT_SUCCESS=0;
     private final int CONNECTION_FAILED=1;
@@ -444,23 +446,29 @@ public class AddRouteActivity extends BaseAppCompatActivity {
                 .icon(bitmap);
         baiduMap.addOverlay(option);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                Toast.makeText(AddRouteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case COMMIT_SUCCESS:
+                Toast.makeText(AddRouteActivity.this, "上传成功", Toast.LENGTH_SHORT).show();
+                finish();
+                break;
+            case DELETE_SUCCESS:
+                Toast.makeText(AddRouteActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+                finish();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             try {
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        Toast.makeText(AddRouteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        break;
-                    case COMMIT_SUCCESS:
-                        Toast.makeText(AddRouteActivity.this, "上传成功", Toast.LENGTH_SHORT).show();
-                        finish();
-                        break;
-                    case DELETE_SUCCESS:
-                        Toast.makeText(AddRouteActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
-                        finish();
-                        break;
-                }
+
             }catch (Exception e){}
         }
     }

@@ -24,10 +24,11 @@ import cn.huangchengxi.funnytrip.activity.team.AddTeamActivity;
 import cn.huangchengxi.funnytrip.activity.team.TeamDetailActivity;
 import cn.huangchengxi.funnytrip.adapter.TeamRVAdapter;
 import cn.huangchengxi.funnytrip.databean.TeamResultBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.TeamItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 
-public class TeamActivity extends AppCompatActivity {
+public class TeamActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private Toolbar toolbar;
     private ImageView back;
     private RecyclerView teamRV;
@@ -35,7 +36,8 @@ public class TeamActivity extends AppCompatActivity {
     private TeamRVAdapter adapter;
     private List<TeamItem> list;
     private SwipeRefreshLayout srl;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private final int CONNECTION_FAILED=0;
     private final int FETCH_SUCCESS=1;
@@ -104,20 +106,26 @@ public class TeamActivity extends AppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                srl.setRefreshing(false);
+                Toast.makeText(TeamActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_SUCCESS:
+                srl.setRefreshing(false);
+                adapter.notifyDataSetChanged();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
             try {
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        srl.setRefreshing(false);
-                        Toast.makeText(TeamActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        break;
-                    case FETCH_SUCCESS:
-                        srl.setRefreshing(false);
-                        adapter.notifyDataSetChanged();
-                        break;
-                }
+
             }catch (Exception e){}
         }
     }

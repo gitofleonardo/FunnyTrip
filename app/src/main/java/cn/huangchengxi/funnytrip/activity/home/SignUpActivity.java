@@ -23,20 +23,22 @@ import org.json.JSONObject;
 import java.io.IOException;
 
 import cn.huangchengxi.funnytrip.R;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.TextValidator;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class SignUpActivity extends AppCompatActivity {
+public class SignUpActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private LinearLayout textContainer;
     private EditText account;
     private EditText password;
     private EditText inviteCode;
     private Button signUp;
     private Button sendCode;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
     private AlertDialog processingDialog;
 
     private final int REGISTER_SUCCESS=0;
@@ -157,81 +159,87 @@ public class SignUpActivity extends AppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        if (processingDialog!=null && processingDialog.isShowing()){
+            processingDialog.dismiss();
+        }
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                if (countDownThread!=null){
+                    countDownThread.interrupt();
+                }
+                sendCode.setEnabled(true);
+                sendCode.setText("发送验证码");
+                Toast.makeText(SignUpActivity.this, "连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case REGISTER_VALIDATE_ERROR:
+                inviteCode.setError("验证码不正确");
+                break;
+            case REGISTER_EMAIL_EXISTED:
+                account.setError("邮箱已注册");
+                break;
+            case REGISTER_SUCCESS:
+                Toast.makeText(SignUpActivity.this, "注册成功", Toast.LENGTH_SHORT).show();
+                Intent data=new Intent();
+                data.putExtra("account",accountStr);
+                data.putExtra("password",passwordStr);
+                setResult(1,data);
+                finish();
+                break;
+            case UPDATE_CODE_BUTTON:
+                int seconds=msg.arg1;
+                if (seconds>0){
+                    sendCode.setText("发送验证码("+seconds+"s)");
+                }else{
+                    sendCode.setText("发送验证码");
+                    sendCode.setEnabled(true);
+                }
+                break;
+            case VALIDATE_CODE_SENT:
+                AlertDialog.Builder builder=new AlertDialog.Builder(SignUpActivity.this);
+                builder.setTitle("发送验证").setMessage("我们已发送一封带有验证码的邮件到您的邮箱，请注意查收").setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).show();
+                countDownThread=new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            int seconds=60;
+                            while (seconds>=0){
+                                Message msg=myHandler.obtainMessage();
+                                msg.what=UPDATE_CODE_BUTTON;
+                                msg.arg1=seconds;
+                                myHandler.sendMessage(msg);
+                                seconds--;
+                                Thread.sleep(1000);
+                            }
+                        }catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                countDownThread.start();
+                break;
+            case VALIDATE_CODE_SEND_FAILED:
+                if (countDownThread!=null){
+                    countDownThread.interrupt();
+                }
+                Toast.makeText(SignUpActivity.this, "发送失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                sendCode.setEnabled(true);
+                sendCode.setText("发送验证码");
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            if (processingDialog!=null && processingDialog.isShowing()){
-                processingDialog.dismiss();
-            }
-            switch (msg.what){
-                case CONNECTION_FAILED:
-                    if (countDownThread!=null){
-                        countDownThread.interrupt();
-                    }
-                    sendCode.setEnabled(true);
-                    sendCode.setText("发送验证码");
-                    Toast.makeText(SignUpActivity.this, "连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
-                case REGISTER_VALIDATE_ERROR:
-                    inviteCode.setError("验证码不正确");
-                    break;
-                case REGISTER_EMAIL_EXISTED:
-                    account.setError("邮箱已注册");
-                    break;
-                case REGISTER_SUCCESS:
-                    Toast.makeText(SignUpActivity.this, "注册成功", Toast.LENGTH_SHORT).show();
-                    Intent data=new Intent();
-                    data.putExtra("account",accountStr);
-                    data.putExtra("password",passwordStr);
-                    setResult(1,data);
-                    finish();
-                    break;
-                case UPDATE_CODE_BUTTON:
-                    int seconds=msg.arg1;
-                    if (seconds>0){
-                        sendCode.setText("发送验证码("+seconds+"s)");
-                    }else{
-                        sendCode.setText("发送验证码");
-                        sendCode.setEnabled(true);
-                    }
-                    break;
-                case VALIDATE_CODE_SENT:
-                    AlertDialog.Builder builder=new AlertDialog.Builder(SignUpActivity.this);
-                    builder.setTitle("发送验证").setMessage("我们已发送一封带有验证码的邮件到您的邮箱，请注意查收").setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.dismiss();
-                        }
-                    }).show();
-                    countDownThread=new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                int seconds=60;
-                                while (seconds>=0){
-                                    Message msg=myHandler.obtainMessage();
-                                    msg.what=UPDATE_CODE_BUTTON;
-                                    msg.arg1=seconds;
-                                    myHandler.sendMessage(msg);
-                                    seconds--;
-                                    Thread.sleep(1000);
-                                }
-                            }catch (Exception e){
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                    countDownThread.start();
-                    break;
-                case VALIDATE_CODE_SEND_FAILED:
-                    if (countDownThread!=null){
-                        countDownThread.interrupt();
-                    }
-                    Toast.makeText(SignUpActivity.this, "发送失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    sendCode.setEnabled(true);
-                    sendCode.setText("发送验证码");
-                    break;
-            }
+
         }
     }
     /*

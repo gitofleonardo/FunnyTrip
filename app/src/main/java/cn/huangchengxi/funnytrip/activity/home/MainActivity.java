@@ -47,6 +47,8 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.account.ChangePasswordActivity;
@@ -67,6 +69,7 @@ import cn.huangchengxi.funnytrip.broadcast.MessageSocketStateReceiver;
 import cn.huangchengxi.funnytrip.databean.ClocksResultBean;
 import cn.huangchengxi.funnytrip.databean.NotesResultBean;
 import cn.huangchengxi.funnytrip.databean.UserInformationBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.ClockItem;
 import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.item.WeatherNow;
@@ -78,7 +81,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class MainActivity extends BaseAppCompatActivity {
+public class MainActivity extends BaseAppCompatActivity implements AppHandler.OnHandleMessage {
     private RecyclerView clockListView;
     private ClockListAdapter clockListAdapter;
     private Toolbar toolbar;
@@ -142,13 +145,16 @@ public class MainActivity extends BaseAppCompatActivity {
     private final int CLOCK_DELETE_FAILED=13;
     private final int CLOCK_DELETE_SUCCESS=14;
     private final int FETCH_NOTES_SUCCESS=15;
+    private final int RECONNECT=16;
+    private final int ACCOUNT_INFO_CHANGE=17;
 
     private String nickname;
     private String portrait_url;
 
     private MainApplication app;
 
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
     private ClockListAdapter cla;
 
     @Override
@@ -272,7 +278,7 @@ public class MainActivity extends BaseAppCompatActivity {
                         startActivityForResult(new Intent(MainActivity.this, AccountSecurityActivity.class),ACCOUNT_SEC_RC);
                         break;
                     case R.id.account_info:
-                        startActivity(new Intent(MainActivity.this, AccountInfoActivity.class));
+                        startActivityForResult(new Intent(MainActivity.this, AccountInfoActivity.class),ACCOUNT_INFO_CHANGE);
                         break;
                     case R.id.setting:
                         startActivityForResult(new Intent(MainActivity.this, SettingActivity.class),SETTINGS_RC);
@@ -424,7 +430,14 @@ public class MainActivity extends BaseAppCompatActivity {
                     networkState.setVisibility(View.GONE);
                 }else if (newState==MessageSocketStateReceiver.STATE_DISCONNECTED){
                     networkState.setVisibility(View.VISIBLE);
-                    messageService.requestConnection();
+                    /*
+                    new Timer().schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            sendMessage(RECONNECT);
+                        }
+                    },5000,1);
+                     */
                 }
             }
         });
@@ -595,73 +608,73 @@ public class MainActivity extends BaseAppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
-    private class MyHandler extends Handler{
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            try {
-                switch (msg.what){
-                    case WEATHER_OK:
-                        if (refreshImg.getVisibility()==View.VISIBLE){
-                            refreshImg.setVisibility(View.INVISIBLE);
-                        }
-                        //handle data here
-                        weather_des.setText(weatherDes);
-                        break;
-                    case WEATHER_FAIL:
-                        Toast.makeText(MainActivity.this, "获取数据失败", Toast.LENGTH_SHORT).show();
-                        if (refreshImg.getVisibility()==View.VISIBLE){
-                            refreshImg.setVisibility(View.INVISIBLE);
-                        }
-                        break;
-                    case FETCH_MY_INFORMATION_FAILED:
-                        Toast.makeText(MainActivity.this, "获取用户信息失败", Toast.LENGTH_SHORT).show();
-                        break;
-                    case FETCH_MY_INFORMATION_SUCCESS:
-                        if (portrait_url!=null && !portrait_url.equals("") && !portrait_url.equals("null")){
-                            Glide.with(MainActivity.this).load(HttpHelper.PIC_SERVER_HOST+portrait_url).into(navPortrait);
-                        }
-                        if (nickname!=null && !nickname.equals("null") && !nickname.equals("")){
-                            userName.setText(nickname);
-                        }
-                        break;
-                    case FETCH_CLOCKS_SUCCESS:
-                        List<ClockItem> list=((ClocksResultBean)msg.obj).getList();
-                        boolean removed=msg.arg1==1?true:false;
-                        if (removed){
-                            clockListAdapter.clear();
-                        }
-                        for (int i=0;i<list.size() && i<((MainApplication)getApplicationContext()).getMAX_CLOCK_COUNT();i++){
-                            clockListAdapter.add(list.get(i));
-                        }
-                        break;
-                    case FETCH_CLOCKS_FOR_BOTTOM_SHEET_SUCCESS:
-                        if (cla!=null){
-                            List<ClockItem> lists=((ClocksResultBean)msg.obj).getList();
-                            boolean remove=msg.arg1==1?true:false;
-                            if (remove){
-                                cla.clear();
-                            }
-                            for (int i=0;i<lists.size();i++){
-                                cla.add(lists.get(i));
-                            }
-                        }
-                        break;
-                    case CLOCK_DELETE_FAILED:
-                        Toast.makeText(MainActivity.this    , "删除失败", Toast.LENGTH_SHORT).show();
-                        fetchClocksForBottomSheet(new Date().getTime(),true);
-                        break;
-                    case CLOCK_DELETE_SUCCESS:
-                        fetchClocks(new Date().getTime(),true);
-                        break;
-                    case FETCH_NOTES_SUCCESS:
-                        NotesResultBean bean=(NotesResultBean)msg.obj;
-                        noteAdapter.clear();
-                        for (int i=0;i<bean.getList().size() && i<((MainApplication)getApplicationContext()).getMAX_NOTE_COUNT();i++){
-                            noteAdapter.add(bean.getList().get(i));
-                        }
-                        break;
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case WEATHER_OK:
+                if (refreshImg.getVisibility()==View.VISIBLE){
+                    refreshImg.setVisibility(View.INVISIBLE);
                 }
-            }catch (Exception e){}
+                //handle data here
+                weather_des.setText(weatherDes);
+                break;
+            case WEATHER_FAIL:
+                Toast.makeText(MainActivity.this, "获取数据失败", Toast.LENGTH_SHORT).show();
+                if (refreshImg.getVisibility()==View.VISIBLE){
+                    refreshImg.setVisibility(View.INVISIBLE);
+                }
+                break;
+            case FETCH_MY_INFORMATION_FAILED:
+                Toast.makeText(MainActivity.this, "获取用户信息失败", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_MY_INFORMATION_SUCCESS:
+                if (portrait_url!=null && !portrait_url.equals("") && !portrait_url.equals("null")){
+                    Glide.with(MainActivity.this).load(HttpHelper.PIC_SERVER_HOST+portrait_url).into(navPortrait);
+                }
+                if (nickname!=null && !nickname.equals("null") && !nickname.equals("")){
+                    userName.setText(nickname);
+                }
+                break;
+            case FETCH_CLOCKS_SUCCESS:
+                List<ClockItem> list=((ClocksResultBean)msg.obj).getList();
+                boolean removed=msg.arg1==1?true:false;
+                if (removed){
+                    clockListAdapter.clear();
+                }
+                for (int i=0;i<list.size() && i<((MainApplication)getApplicationContext()).getMAX_CLOCK_COUNT();i++){
+                    clockListAdapter.add(list.get(i));
+                }
+                break;
+            case FETCH_CLOCKS_FOR_BOTTOM_SHEET_SUCCESS:
+                if (cla!=null){
+                    List<ClockItem> lists=((ClocksResultBean)msg.obj).getList();
+                    boolean remove=msg.arg1==1?true:false;
+                    if (remove){
+                        cla.clear();
+                    }
+                    for (int i=0;i<lists.size();i++){
+                        cla.add(lists.get(i));
+                    }
+                }
+                break;
+            case CLOCK_DELETE_FAILED:
+                Toast.makeText(MainActivity.this    , "删除失败", Toast.LENGTH_SHORT).show();
+                fetchClocksForBottomSheet(new Date().getTime(),true);
+                break;
+            case CLOCK_DELETE_SUCCESS:
+                fetchClocks(new Date().getTime(),true);
+                break;
+            case FETCH_NOTES_SUCCESS:
+                NotesResultBean bean=(NotesResultBean)msg.obj;
+                noteAdapter.clear();
+                for (int i=0;i<bean.getList().size() && i<((MainApplication)getApplicationContext()).getMAX_NOTE_COUNT();i++){
+                    noteAdapter.add(bean.getList().get(i));
+                }
+                break;
+            case RECONNECT:
+                //messageService.requestConnection();
+                break;
         }
     }
     private class LocationFetcher extends BDAbstractLocationListener{
@@ -748,6 +761,12 @@ public class MainActivity extends BaseAppCompatActivity {
                     finish();
                 }
                 break;
+            case ACCOUNT_INFO_CHANGE:
+                if (resultCode==1){
+                    fetchMyInformation();
+                }
+                break;
+
         }
     }
     private void updateWeather(final String weatherID){

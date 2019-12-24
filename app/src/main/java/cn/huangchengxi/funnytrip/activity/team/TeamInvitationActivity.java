@@ -20,16 +20,19 @@ import java.util.List;
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.adapter.TeamUpMessageAdapter;
 import cn.huangchengxi.funnytrip.databean.TeamInvitationResultBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.TeamInvitationItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 
-public class TeamInvitationActivity extends AppCompatActivity {
+public class TeamInvitationActivity extends AppCompatActivity implements AppHandler.OnHandleMessage {
     private Toolbar toolbar;
     private ImageView back;
     private RecyclerView recyclerView;
     private List<TeamInvitationItem> list;
     private TeamUpMessageAdapter adapter;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
+
     private AlertDialog dialog;
 
     private final int CONNECTION_FAILED=0;
@@ -107,29 +110,35 @@ public class TeamInvitationActivity extends AppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                Toast.makeText(TeamInvitationActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_SUCCESS:
+                adapter.notifyDataSetChanged();
+                break;
+            case AGREE_SUCCESS:
+                if (dialog!=null){
+                    dialog.dismiss();
+                }
+                for (int i=0;i<list.size();i++){
+                    if (list.get(i).getTeamID().equals(msg.obj)){
+                        list.get(i).setAgreed(true);
+                        adapter.notifyItemChanged(i);
+                    }
+                }
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
             try {
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        Toast.makeText(TeamInvitationActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        break;
-                    case FETCH_SUCCESS:
-                        adapter.notifyDataSetChanged();
-                        break;
-                    case AGREE_SUCCESS:
-                        if (dialog!=null){
-                            dialog.dismiss();
-                        }
-                        for (int i=0;i<list.size();i++){
-                            if (list.get(i).getTeamID().equals(msg.obj)){
-                                list.get(i).setAgreed(true);
-                                adapter.notifyItemChanged(i);
-                            }
-                        }
-                        break;
-                }
+
             }catch (Exception e){}
         }
     }

@@ -192,10 +192,12 @@ public class ChattingActivity extends AppCompatActivity {
         receiver.setOnMessageReceived(new MessageReceiver.OnMessageReceived() {
             @Override
             public void OnReveived(String messageID,String fromUID, String toUID, String content, long time,String context) {
-                if (!context.equals("ChattingActivity")){
+                if (!context.equals("ChattingActivity") && fromUID.equals(userId)){
                     ChatMessageItem item=new ChatMessageItem(messageID,content,fromUID,hisPortraitUrl,time,true,true);
-                    list.add(list.size()-1,item);
-                    adapter.notifyItemInserted(list.size()-1);
+                    list.add(list.size(),item);
+                    //adapter.notifyItemChanged(list.size()-1);
+                    //adapter.notifyItemInserted(list.size()-1);
+                    adapter.notifyDataSetChanged();
                     recyclerView.scrollToPosition(list.size()-1);
                 }
             }

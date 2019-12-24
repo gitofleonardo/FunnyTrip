@@ -32,13 +32,14 @@ import cn.huangchengxi.funnytrip.activity.friend.FriendDetailActivity;
 import cn.huangchengxi.funnytrip.adapter.MomentRVAdapter;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.MomentsBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.MomentItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class MomentsFragment extends Fragment {
+public class MomentsFragment extends Fragment implements AppHandler.OnHandleMessage{
     private final int CONNECTION_FAILED=2;
     private final int FETCH_SUCCESS=3;
     private final int FETCH_FAILED=4;
@@ -57,7 +58,8 @@ public class MomentsFragment extends Fragment {
     private List<MomentItem> newList;
     private MomentRVAdapter adapter;
     private String userId;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private OnNotAllowListener onNotAllowListener;
     private OnNetworkNotAvailableListener onNetworkNotAvailableListener;
@@ -148,6 +150,11 @@ public class MomentsFragment extends Fragment {
                     sendMessage(ADD_FETCH_SUCCESS);
                 }
             }
+
+            @Override
+            public void onReturnNotAllowed() {
+                sendMessage(FETCH_NOT_ALLOW);
+            }
         });
     }
     private void sendMessage(int what){
@@ -162,54 +169,60 @@ public class MomentsFragment extends Fragment {
         m.obj=momentID;
         myHandler.sendMessage(m);
     }
-    private class MyHandler extends Handler{
-        @Override
-        public void handleMessage(Message msg) {
-            try {
-                if (srl.isRefreshing()){
-                    srl.setRefreshing(false);
-                }
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        Toast.makeText(getContext() , "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        if (onNetworkNotAvailableListener!=null){
-                            onNetworkNotAvailableListener.onCommit();
-                        }
-                        break;
-                    case FETCH_FAILED:
-                        Toast.makeText(getContext() , "获取数据失败", Toast.LENGTH_SHORT).show();
-                        break;
-                    case FETCH_SUCCESS:
-                        list.clear();
-                        adapter.notifyDataSetChanged();
-                        list.addAll(newList);
-                        adapter.notifyDataSetChanged();
-                        break;
-                    case ADD_FETCH_SUCCESS:
-                        list.addAll(newList);
-                        adapter.notifyDataSetChanged();
-                        break;
-                    case LIKE_SUCCESS:
-                        int position=msg.arg1;
-                        String momentID=(String) msg.obj;
-                        if (list.get(position)!=null && list.get(position).getMomentId().equals(momentID)){
-                            list.get(position).setLikeCount(list.get(position).getLikeCount()+1);
-                            adapter.notifyItemChanged(position);
-                        }
-                        break;
-                    case ALREADY_LIKE:
-                        Toast.makeText(getContext(), "您已经赞过了哦...", Toast.LENGTH_SHORT).show();
-                        break;
-                    case FETCH_NOT_ALLOW:
-                        if (onNotAllowListener!=null){
-                            onNotAllowListener.onCommit();
-                        }
-                        break;
-                }
-            }catch (Exception e){}
+
+    @Override
+    public void onHandle(Message msg) {
+        try {
             if (srl.isRefreshing()){
                 srl.setRefreshing(false);
             }
+            switch (msg.what){
+                case CONNECTION_FAILED:
+                    Toast.makeText(getContext() , "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                    if (onNetworkNotAvailableListener!=null){
+                        onNetworkNotAvailableListener.onCommit();
+                    }
+                    break;
+                case FETCH_FAILED:
+                    Toast.makeText(getContext() , "获取数据失败", Toast.LENGTH_SHORT).show();
+                    break;
+                case FETCH_SUCCESS:
+                    list.clear();
+                    adapter.notifyDataSetChanged();
+                    list.addAll(newList);
+                    adapter.notifyDataSetChanged();
+                    break;
+                case ADD_FETCH_SUCCESS:
+                    list.addAll(newList);
+                    adapter.notifyDataSetChanged();
+                    break;
+                case LIKE_SUCCESS:
+                    int position=msg.arg1;
+                    String momentID=(String) msg.obj;
+                    if (list.get(position)!=null && list.get(position).getMomentId().equals(momentID)){
+                        list.get(position).setLikeCount(list.get(position).getLikeCount()+1);
+                        adapter.notifyItemChanged(position);
+                    }
+                    break;
+                case ALREADY_LIKE:
+                    Toast.makeText(getContext(), "您已经赞过了哦...", Toast.LENGTH_SHORT).show();
+                    break;
+                case FETCH_NOT_ALLOW:
+                    if (onNotAllowListener!=null){
+                        onNotAllowListener.onCommit();
+                    }
+                    break;
+            }
+        }catch (Exception e){}
+        if (srl.isRefreshing()){
+            srl.setRefreshing(false);
+        }
+    }
+
+    private class MyHandler extends Handler{
+        @Override
+        public void handleMessage(Message msg) {
+
         }
     }
 
@@ -255,4 +268,5 @@ public class MomentsFragment extends Fragment {
     public void setOnNetworkNotAvailableListener(OnNetworkNotAvailableListener onNetworkNotAvailableListener) {
         this.onNetworkNotAvailableListener = onNetworkNotAvailableListener;
     }
+
 }

@@ -26,12 +26,13 @@ import java.io.IOException;
 
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class SetAccountNameActivity extends AppCompatActivity {
+public class SetAccountNameActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private Toolbar toolbar;
     private ImageView back;
     private TextView save;
@@ -45,7 +46,8 @@ public class SetAccountNameActivity extends AppCompatActivity {
 
     private AlertDialog dialog;
 
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,36 +124,42 @@ public class SetAccountNameActivity extends AppCompatActivity {
         m.what=what;
         myHandler.sendMessage(m);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                if (dialog!=null && dialog.isShowing()){
+                    dialog.dismiss();
+                }
+                Toast.makeText(SetAccountNameActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case CHANGE_FAILED:
+                if (dialog!=null && dialog.isShowing()){
+                    dialog.dismiss();
+                }
+                Toast.makeText(SetAccountNameActivity.this, "更改失败", Toast.LENGTH_SHORT).show();
+                break;
+            case CHANGE_SUCCESS:
+                if (dialog!=null && dialog.isShowing()){
+                    dialog.dismiss();
+                }
+                Toast.makeText(SetAccountNameActivity.this, "昵称更改成功", Toast.LENGTH_SHORT).show();
+                Intent intent=new Intent();
+                intent.putExtra("newName",name.getText().toString());
+                setResult(1,intent);
+                finish();
+                break;
+            case NOT_LOGIN:
+
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what){
-                case CONNECTION_FAILED:
-                    if (dialog!=null && dialog.isShowing()){
-                        dialog.dismiss();
-                    }
-                    Toast.makeText(SetAccountNameActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
-                case CHANGE_FAILED:
-                    if (dialog!=null && dialog.isShowing()){
-                        dialog.dismiss();
-                    }
-                    Toast.makeText(SetAccountNameActivity.this, "更改失败", Toast.LENGTH_SHORT).show();
-                    break;
-                case CHANGE_SUCCESS:
-                    if (dialog!=null && dialog.isShowing()){
-                        dialog.dismiss();
-                    }
-                    Toast.makeText(SetAccountNameActivity.this, "昵称更改成功", Toast.LENGTH_SHORT).show();
-                    Intent intent=new Intent();
-                    intent.putExtra("newName",name.getText().toString());
-                    setResult(1,intent);
-                    finish();
-                    break;
-                case NOT_LOGIN:
 
-                    break;
-            }
         }
     }
 }

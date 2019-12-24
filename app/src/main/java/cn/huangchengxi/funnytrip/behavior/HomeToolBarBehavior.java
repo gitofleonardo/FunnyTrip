@@ -21,7 +21,7 @@ public class HomeToolBarBehavior extends CoordinatorLayout.Behavior<Toolbar> {
         if (percent>1){
             percent=1;
         }
-        float alpha=percent*250;
+        float alpha=percent*255;
 
         child.setBackgroundColor(Color.argb((int)alpha,3,169,244));
         return true;

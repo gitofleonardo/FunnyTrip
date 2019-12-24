@@ -31,6 +31,7 @@ import cn.huangchengxi.funnytrip.activity.home.TipsActivity;
 import cn.huangchengxi.funnytrip.adapter.MyTipsRVAdapter;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.TipsResultBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.TipsItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
@@ -38,7 +39,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class MyTipsActivity extends AppCompatActivity {
+public class MyTipsActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private RecyclerView recyclerView;
     private Toolbar toolbar;
     private ImageView back;
@@ -54,7 +55,8 @@ public class MyTipsActivity extends AppCompatActivity {
     private final int DELETE_FAILED=4;
     private final int DELETE_SUCCESS=5;
 
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,35 +146,41 @@ public class MyTipsActivity extends AppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                srl.setRefreshing(false);
+                Toast.makeText(MyTipsActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_FAILED:
+                srl.setRefreshing(false);
+                Toast.makeText(MyTipsActivity.this, "获取数据失败", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_SUCCESS:
+                srl.setRefreshing(false);
+                if ((Boolean)msg.obj){
+                    list.clear();
+                    list.addAll(newList);
+                }else{
+                    list.addAll(newList);
+                }
+                adapter.notifyDataSetChanged();
+                break;
+            case NOT_LOGIN:
+                break;
+            case DELETE_FAILED:
+                Toast.makeText(MyTipsActivity.this, "删除失败", Toast.LENGTH_SHORT).show();
+                fetchTipsFromServer(new Date().getTime(),true);
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what){
-                case CONNECTION_FAILED:
-                    srl.setRefreshing(false);
-                    Toast.makeText(MyTipsActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
-                case FETCH_FAILED:
-                    srl.setRefreshing(false);
-                    Toast.makeText(MyTipsActivity.this, "获取数据失败", Toast.LENGTH_SHORT).show();
-                    break;
-                case FETCH_SUCCESS:
-                    srl.setRefreshing(false);
-                    if ((Boolean)msg.obj){
-                        list.clear();
-                        list.addAll(newList);
-                    }else{
-                        list.addAll(newList);
-                    }
-                    adapter.notifyDataSetChanged();
-                    break;
-                case NOT_LOGIN:
-                    break;
-                case DELETE_FAILED:
-                    Toast.makeText(MyTipsActivity.this, "删除失败", Toast.LENGTH_SHORT).show();
-                    fetchTipsFromServer(new Date().getTime(),true);
-                    break;
-            }
+
         }
     }
 

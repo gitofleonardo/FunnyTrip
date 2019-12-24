@@ -18,12 +18,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
             <ImageView
-                android:tag="overScroll"
                 android:id="@+id/home_head_img"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:fadingEdge="vertical"
-                android:fadingEdgeLength="1000dp"
                 android:scaleType="centerCrop"
                 android:src="@drawable/bg1"
                 app:layout_collapseMode="parallax"
@@ -104,6 +101,7 @@
         </FrameLayout>
     </androidx.appcompat.widget.Toolbar>
     <TextView
+        android:textColor="@color/white"
         app:layout_behavior=".behavior.HeadTitleBehavoir"
         android:layout_marginTop="88dp"
         app:layout_anchor="@id/home_head_img"

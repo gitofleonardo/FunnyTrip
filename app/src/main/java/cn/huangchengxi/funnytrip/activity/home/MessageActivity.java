@@ -30,13 +30,14 @@ import cn.huangchengxi.funnytrip.adapter.MesssageRVAdapter;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.broadcast.MessageReceiver;
 import cn.huangchengxi.funnytrip.databean.UserInformationBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.MessageItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.LocalUsersUpdate;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import cn.huangchengxi.funnytrip.view.HomeAppView;
 
-public class MessageActivity extends AppCompatActivity {
+public class MessageActivity extends AppCompatActivity implements AppHandler.OnHandleMessage {
     private RecyclerView recyclerView;
     private MesssageRVAdapter adapter;
     private HomeAppView newFriend;
@@ -48,7 +49,9 @@ public class MessageActivity extends AppCompatActivity {
     private WebSocketMessageService.WebSocketClientBinder binder;
     private ServiceConnection connection=null;
     private List<MessageItem> list;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
+
     private MessageReceiver receiver;
 
     private final int CONNECTION_FAILED=0;
@@ -105,6 +108,7 @@ public class MessageActivity extends AppCompatActivity {
                 if (srl.isRefreshing()){
                     srl.setRefreshing(false);
                     binder.getService().fetchUnread();
+                    initFromLocalDatabase();
                 }
             }
         });
@@ -140,7 +144,7 @@ public class MessageActivity extends AppCompatActivity {
             }
             @Override
             public void onSuccessSent(String messageID) {
-
+                initFromLocalDatabase();
             }
         });
         IntentFilter intentFilter=new IntentFilter("cn.huangchengxi.funnytrip.MESSAGE_RECEIVER");
@@ -252,17 +256,23 @@ public class MessageActivity extends AppCompatActivity {
         msg.obj=uid;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                break;
+            case FETCH_SUCCESS:
+                String uid=(String)msg.obj;
+                updateNameAndPortrait(uid);
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what){
-                case CONNECTION_FAILED:
-                    break;
-                case FETCH_SUCCESS:
-                    String uid=(String)msg.obj;
-                    updateNameAndPortrait(uid);
-                    break;
-            }
+
         }
     }
     @Override

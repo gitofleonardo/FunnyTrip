@@ -26,13 +26,14 @@ import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.UserInformationBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.view.OptionView;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class FriendDetailActivity extends BaseAppCompatActivity {
+public class FriendDetailActivity extends BaseAppCompatActivity implements AppHandler.OnHandleMessage{
     //fetch user info by user id
     private String userId;
     private Toolbar toolbar;
@@ -49,7 +50,8 @@ public class FriendDetailActivity extends BaseAppCompatActivity {
     private TextView career;
     private TextView interest;
     private TextView name;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private UserInformationBean userInformationBean;
 
@@ -127,58 +129,64 @@ public class FriendDetailActivity extends BaseAppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                Toast.makeText(FriendDetailActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_SUCCESS:
+                if (!userInformationBean.getPortraitUrl().equals("null")){
+                    Glide.with(FriendDetailActivity.this).load(HttpHelper.PIC_SERVER_HOST+userInformationBean.getPortraitUrl()).into(portrait);
+                }
+                if (userInformationBean.getNickname().equals("null")){
+                    name.setText(userId);
+                }else{
+                    name.setText(userInformationBean.getNickname());
+                }
+                email.setText(userInformationBean.getMail());
+                if (!userInformationBean.getAddress().equals("null")){
+                    address.setVisibility(View.VISIBLE);
+                    address.setText("地址:"+userInformationBean.getAddress());
+                }
+                if (userInformationBean.getGender()!=0){
+                    gender.setVisibility(View.VISIBLE);
+                    gender.setText("性别:"+(userInformationBean.getGender()==1?"男":"女"));
+                }
+                if (userInformationBean.getBirthday()!=0){
+                    birth.setVisibility(View.VISIBLE);
+                    SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+                    birth.setText("生日:"+sdf.format(new Date(userInformationBean.getBirthday())));
+                }
+                if (!userInformationBean.getHomeland().equals("null")){
+                    homeland.setVisibility(View.VISIBLE);
+                    homeland.setText("故乡:"+userInformationBean.getHomeland());
+                }
+                if (!userInformationBean.getCareer().equals("null")){
+                    career.setVisibility(View.VISIBLE);
+                    career.setText("职业:"+userInformationBean.getCareer());
+                }
+                if (!userInformationBean.getInterest().equals("null")){
+                    interest.setVisibility(View.VISIBLE);
+                    interest.setText("兴趣:"+userInformationBean.getInterest());
+                }
+                if (userInformationBean.isShowAddFriend()){
+                    addFriend.setVisibility(View.VISIBLE);
+                }
+                if (userInformationBean.isShowSendMessage()){
+                    sendMsg.setVisibility(View.VISIBLE);
+                }
+                moments.setVisibility(View.VISIBLE);
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
             try {
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        Toast.makeText(FriendDetailActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        break;
-                    case FETCH_SUCCESS:
-                        if (!userInformationBean.getPortraitUrl().equals("null")){
-                            Glide.with(FriendDetailActivity.this).load(HttpHelper.PIC_SERVER_HOST+userInformationBean.getPortraitUrl()).into(portrait);
-                        }
-                        if (userInformationBean.getNickname().equals("null")){
-                            name.setText(userId);
-                        }else{
-                            name.setText(userInformationBean.getNickname());
-                        }
-                        email.setText(userInformationBean.getMail());
-                        if (!userInformationBean.getAddress().equals("null")){
-                            address.setVisibility(View.VISIBLE);
-                            address.setText("地址:"+userInformationBean.getAddress());
-                        }
-                        if (userInformationBean.getGender()!=0){
-                            gender.setVisibility(View.VISIBLE);
-                            gender.setText("性别:"+(userInformationBean.getGender()==1?"男":"女"));
-                        }
-                        if (userInformationBean.getBirthday()!=0){
-                            birth.setVisibility(View.VISIBLE);
-                            SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
-                            birth.setText("生日:"+sdf.format(new Date(userInformationBean.getBirthday())));
-                        }
-                        if (!userInformationBean.getHomeland().equals("null")){
-                            homeland.setVisibility(View.VISIBLE);
-                            homeland.setText("故乡:"+userInformationBean.getHomeland());
-                        }
-                        if (!userInformationBean.getCareer().equals("null")){
-                            career.setVisibility(View.VISIBLE);
-                            career.setText("职业:"+userInformationBean.getCareer());
-                        }
-                        if (!userInformationBean.getInterest().equals("null")){
-                            interest.setVisibility(View.VISIBLE);
-                            interest.setText("兴趣:"+userInformationBean.getInterest());
-                        }
-                        if (userInformationBean.isShowAddFriend()){
-                            addFriend.setVisibility(View.VISIBLE);
-                        }
-                        if (userInformationBean.isShowSendMessage()){
-                            sendMsg.setVisibility(View.VISIBLE);
-                        }
-                        moments.setVisibility(View.VISIBLE);
-                        break;
-                }
+
             }catch (Exception e){}
         }
     }

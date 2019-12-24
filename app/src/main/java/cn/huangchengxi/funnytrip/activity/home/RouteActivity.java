@@ -24,10 +24,11 @@ import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.route.AddRouteActivity;
 import cn.huangchengxi.funnytrip.adapter.RouteAdapter;
 import cn.huangchengxi.funnytrip.databean.RoutesResultBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.RouteItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 
-public class RouteActivity extends AppCompatActivity {
+public class RouteActivity extends AppCompatActivity implements AppHandler.OnHandleMessage {
     private RecyclerView recyclerView;
     private RouteAdapter adapter;
     private List<RouteItem> list;
@@ -42,7 +43,8 @@ public class RouteActivity extends AppCompatActivity {
 
     private final int CONNECTION_FAILED=2;
     private final int FETCH_ROUTES_SUCCESS=3;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,26 +124,32 @@ public class RouteActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                srl.setRefreshing(false);
+                Toast.makeText(RouteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_ROUTES_SUCCESS:
+                srl.setRefreshing(false);
+                RoutesResultBean bean=(RoutesResultBean)msg.obj;
+                boolean remove=msg.arg1==1?true:false;
+                if (remove){
+                    list.clear();
+                }
+                list.addAll(bean.getList());
+                adapter.notifyDataSetChanged();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
             try {
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        srl.setRefreshing(false);
-                        Toast.makeText(RouteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        break;
-                    case FETCH_ROUTES_SUCCESS:
-                        srl.setRefreshing(false);
-                        RoutesResultBean bean=(RoutesResultBean)msg.obj;
-                        boolean remove=msg.arg1==1?true:false;
-                        if (remove){
-                            list.clear();
-                        }
-                        list.addAll(bean.getList());
-                        adapter.notifyDataSetChanged();
-                        break;
-                }
+
             }catch (Exception e){}
         }
     }

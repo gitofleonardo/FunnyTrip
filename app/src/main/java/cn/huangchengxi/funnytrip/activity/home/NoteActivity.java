@@ -26,11 +26,12 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.Date;
 
 import cn.huangchengxi.funnytrip.R;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 
-public class NoteActivity extends AppCompatActivity {
+public class NoteActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     public static final int INSERT_OR_UPDATE_SUCCESS=0;
     public static final int INSERT_OR_UPDATE_FAILED=1;
 
@@ -45,7 +46,8 @@ public class NoteActivity extends AppCompatActivity {
     private TextView tip;
     private NoteItem note;
     private FloatingActionButton deleteButton;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private AlertDialog dialog;
 
@@ -180,30 +182,36 @@ public class NoteActivity extends AppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                Toast.makeText(NoteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case COMMIT_SUCCESS:
+                if (dialog!=null){
+                    dialog.dismiss();
+                }
+                Toast.makeText(NoteActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+                setResult(INSERT_OR_UPDATE_SUCCESS,new Intent());
+                finish();
+                break;
+            case DELETE_SUCCESS:
+                if (dialog!=null){
+                    dialog.dismiss();
+                }
+                setResult(INSERT_OR_UPDATE_SUCCESS,new Intent());
+                finish();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
             try {
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        Toast.makeText(NoteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        break;
-                    case COMMIT_SUCCESS:
-                        if (dialog!=null){
-                            dialog.dismiss();
-                        }
-                        Toast.makeText(NoteActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
-                        setResult(INSERT_OR_UPDATE_SUCCESS,new Intent());
-                        finish();
-                        break;
-                    case DELETE_SUCCESS:
-                        if (dialog!=null){
-                            dialog.dismiss();
-                        }
-                        setResult(INSERT_OR_UPDATE_SUCCESS,new Intent());
-                        finish();
-                        break;
-                }
+
             }catch (Exception e){}
         }
     }

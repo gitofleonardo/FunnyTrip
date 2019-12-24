@@ -52,6 +52,20 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
             <cn.huangchengxi.funnytrip.view.AboutOption
+                android:id="@+id/my_github"
+                app:main="我的Github"
+                app:sub="https://github.com/gitofleonardo"
+                android:foreground="?selectableItemBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+            <cn.huangchengxi.funnytrip.view.AboutOption
+                android:id="@+id/my_funntrip_github"
+                app:main="在Github上查看此项目"
+                app:sub="https://github.com/gitofleonardo/FunnyTrip"
+                android:foreground="?selectableItemBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+            <cn.huangchengxi.funnytrip.view.AboutOption
                 android:id="@+id/my_mail"
                 app:main="开发者"
                 app:sub="971840889@qq.com"
@@ -62,7 +76,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 app:main="致谢"
-                app:sub="百度地图开放平台\n刘洋参与服务器开发"
+                app:sub="百度地图开放平台"
                 android:foreground="?selectableItemBackground"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>

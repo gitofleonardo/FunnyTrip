@@ -36,13 +36,14 @@ import java.util.Date;
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.base.BaseAppCompatActivity;
 import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.sqlite.SqliteHelper;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class ClockActivity extends BaseAppCompatActivity {
+public class ClockActivity extends BaseAppCompatActivity implements AppHandler.OnHandleMessage{
     public static final int SUCCESS=0;
     public static final int FAILURE=1;
 
@@ -63,7 +64,8 @@ public class ClockActivity extends BaseAppCompatActivity {
     private final int CLOCK_FAILED=2;
     private final int NOT_LOGIN=3;
 
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -184,24 +186,30 @@ public class ClockActivity extends BaseAppCompatActivity {
             }
         });
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                Toast.makeText(ClockActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case CLOCK_FAILED:
+                Toast.makeText(ClockActivity.this, "打卡失败", Toast.LENGTH_SHORT).show();
+                break;
+            case CLOCK_SUCCESS:
+                Toast.makeText(ClockActivity.this, "打卡成功", Toast.LENGTH_SHORT).show();
+                setResult(SUCCESS);
+                finish();
+                break;
+            case NOT_LOGIN:
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what){
-                case CONNECTION_FAILED:
-                    Toast.makeText(ClockActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
-                case CLOCK_FAILED:
-                    Toast.makeText(ClockActivity.this, "打卡失败", Toast.LENGTH_SHORT).show();
-                    break;
-                case CLOCK_SUCCESS:
-                    Toast.makeText(ClockActivity.this, "打卡成功", Toast.LENGTH_SHORT).show();
-                    setResult(SUCCESS);
-                    finish();
-                    break;
-                case NOT_LOGIN:
-                    break;
-            }
+
         }
     }
     @Override

@@ -1,5 +1,6 @@
 package cn.huangchengxi.funnytrip.activity.account;
 
+import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -44,6 +45,7 @@ import cn.huangchengxi.funnytrip.activity.navigation.AccountInfoActivity;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.PortraitUrlBean;
 import cn.huangchengxi.funnytrip.databean.UserInformationBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.StorageHelper;
 import cn.huangchengxi.funnytrip.view.AddressPickerDialog;
@@ -54,8 +56,9 @@ import okhttp3.Response;
 
 import static android.app.Activity.RESULT_OK;
 
-public class AccountInfoFragment extends Fragment {
-    private MyHandler myHandler=new MyHandler();
+public class AccountInfoFragment extends Fragment implements AppHandler.OnHandleMessage{
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
     private OnFragmentInteractionListener mListener;
     private OnDataChanged onDataChanged;
 
@@ -333,23 +336,30 @@ public class AccountInfoFragment extends Fragment {
             }
         }
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case UPLOAD_PORTRAIT_FAILED:
+                Toast.makeText(getContext(), "上传失败", Toast.LENGTH_SHORT).show();
+                break;
+            case UPLOAD_PORTRAIT_SUCCESS:
+                Toast.makeText(getContext(), "上传成功", Toast.LENGTH_SHORT).show();
+                String url=(String)msg.obj;
+                Glide.with(getContext()).load(HttpHelper.PIC_SERVER_HOST+url).into(portrait);
+                ((Activity)getContext()).setResult(1);
+                break;
+            case CONNECTION_FAILED:
+                Toast.makeText(getContext(), "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+
+        }
+    }
+
     private class MyHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what){
-                case UPLOAD_PORTRAIT_FAILED:
-                    Toast.makeText(getContext(), "上传失败", Toast.LENGTH_SHORT).show();
-                    break;
-                case UPLOAD_PORTRAIT_SUCCESS:
-                    Toast.makeText(getContext(), "上传成功", Toast.LENGTH_SHORT).show();
-                    String url=(String)msg.obj;
-                    Glide.with(getContext()).load(HttpHelper.PIC_SERVER_HOST+url).into(portrait);
-                    break;
-                case CONNECTION_FAILED:
-                    Toast.makeText(getContext(), "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
 
-            }
         }
     }
     public void onButtonPressed(Uri uri) {
@@ -414,6 +424,7 @@ public class AccountInfoFragment extends Fragment {
             case SET_NAME:
                 if (data!=null){
                     setName.setSubText(data.getStringExtra("newName"));
+                    ((Activity)getContext()).setResult(1);
                 }
                 break;
         }

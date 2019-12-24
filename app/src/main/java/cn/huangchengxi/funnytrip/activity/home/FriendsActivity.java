@@ -28,6 +28,7 @@ import cn.huangchengxi.funnytrip.activity.friend.FriendDetailActivity;
 import cn.huangchengxi.funnytrip.adapter.FriendRVAdapter;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.FriendBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.FriendItem;
 import cn.huangchengxi.funnytrip.item.FriendSearchResultItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
@@ -35,7 +36,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class FriendsActivity extends AppCompatActivity {
+public class FriendsActivity extends AppCompatActivity implements AppHandler.OnHandleMessage {
     private RecyclerView recyclerView;
     private FriendRVAdapter adapter;
     private SwipeRefreshLayout srl;
@@ -43,7 +44,8 @@ public class FriendsActivity extends AppCompatActivity {
     private ImageView addFrind;
     private List<FriendItem> list;
 
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private final int FETCH_FAILED=0;
     private final int FETCH_SUCCESS=1;
@@ -118,24 +120,30 @@ public class FriendsActivity extends AppCompatActivity {
         m.what=what;
         myHandler.sendMessage(m);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        srl.setRefreshing(false);
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                Toast.makeText(FriendsActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_FAILED:
+                Toast.makeText(FriendsActivity.this, "获取数据失败", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_SUCCESS:
+                adapter.clearAll();
+                adapter.addAll(list);
+                break;
+            case NOT_LOGIN:
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            srl.setRefreshing(false);
-            switch (msg.what){
-                case CONNECTION_FAILED:
-                    Toast.makeText(FriendsActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
-                case FETCH_FAILED:
-                    Toast.makeText(FriendsActivity.this, "获取数据失败", Toast.LENGTH_SHORT).show();
-                    break;
-                case FETCH_SUCCESS:
-                    adapter.clearAll();
-                    adapter.addAll(list);
-                    break;
-                case NOT_LOGIN:
-                    break;
-            }
+
         }
     }
 }

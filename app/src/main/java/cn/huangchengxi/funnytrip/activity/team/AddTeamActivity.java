@@ -32,12 +32,13 @@ import cn.huangchengxi.funnytrip.adapter.InviteFriendBottomRVAdapter;
 import cn.huangchengxi.funnytrip.adapter.TeamInviteFriendRVAdapter;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.FriendBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.BottomRVFriendItem;
 import cn.huangchengxi.funnytrip.item.FriendItem;
 import cn.huangchengxi.funnytrip.item.TeamInviteFriendItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 
-public class AddTeamActivity extends AppCompatActivity {
+public class AddTeamActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private TeamInviteFriendRVAdapter adapter;
     private RecyclerView recyclerView;
     private Toolbar toolbar;
@@ -50,7 +51,9 @@ public class AddTeamActivity extends AppCompatActivity {
     private SwipeRefreshLayout bottomSheetSrl;
     private ServiceConnection connection;
     private WebSocketMessageService.WebSocketClientBinder binder;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
+
     private InviteFriendBottomRVAdapter bottomAdapter;
 
     private final int CONNECTION_FAILED=0;
@@ -157,34 +160,40 @@ public class AddTeamActivity extends AppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                if (bottomSheetSrl!=null){
+                    bottomSheetSrl.setRefreshing(false);
+                }
+                Toast.makeText(AddTeamActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case CREATE_SUCCESS:
+                Toast.makeText(AddTeamActivity.this, "正在邀请好友", Toast.LENGTH_SHORT).show();
+                inviteTeammate(list,((MainApplication)getApplicationContext()).getUID());
+                break;
+            case INVITE_SUCCESS:
+                Toast.makeText(AddTeamActivity.this, "邀请成功", Toast.LENGTH_SHORT).show();
+                finish();
+                break;
+            case INVITE_FAILED:
+                Toast.makeText(AddTeamActivity.this, "邀请好友失败", Toast.LENGTH_SHORT).show();
+                finish();
+                break;
+            case FETCH_FRIEND_SUCCESS:
+                bottomSheetSrl.setRefreshing(false);
+                bottomAdapter.notifyDataSetChanged();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
             try {
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        if (bottomSheetSrl!=null){
-                            bottomSheetSrl.setRefreshing(false);
-                        }
-                        Toast.makeText(AddTeamActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        break;
-                    case CREATE_SUCCESS:
-                        Toast.makeText(AddTeamActivity.this, "正在邀请好友", Toast.LENGTH_SHORT).show();
-                        inviteTeammate(list,((MainApplication)getApplicationContext()).getUID());
-                        break;
-                    case INVITE_SUCCESS:
-                        Toast.makeText(AddTeamActivity.this, "邀请成功", Toast.LENGTH_SHORT).show();
-                        finish();
-                        break;
-                    case INVITE_FAILED:
-                        Toast.makeText(AddTeamActivity.this, "邀请好友失败", Toast.LENGTH_SHORT).show();
-                        finish();
-                        break;
-                    case FETCH_FRIEND_SUCCESS:
-                        bottomSheetSrl.setRefreshing(false);
-                        bottomAdapter.notifyDataSetChanged();
-                        break;
-                }
+
             }catch (Exception e){
                 Log.e("addteamexception",e.toString());
             }

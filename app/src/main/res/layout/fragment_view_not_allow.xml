@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.moments.ViewNotAllowFragment">
+    tools:context=".activity.moments.ViewNotAllowFragment"
+    android:background="@color/white">
     <LinearLayout
         android:layout_gravity="center"
         android:orientation="vertical"

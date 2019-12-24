@@ -20,10 +20,11 @@ import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.home.NoteActivity;
 import cn.huangchengxi.funnytrip.adapter.NoteAdapter;
 import cn.huangchengxi.funnytrip.databean.NotesResultBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.NoteItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 
-public class MyNoteActivity extends AppCompatActivity {
+public class MyNoteActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private RecyclerView recyclerView;
     private NoteAdapter adapter;
     private Toolbar toolbar;
@@ -34,7 +35,8 @@ public class MyNoteActivity extends AppCompatActivity {
     private final int FETCH_NOTES_SUCCESS=1;
 
     private final int NOTE_RC=0;
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,25 +110,31 @@ public class MyNoteActivity extends AppCompatActivity {
                 break;
         }
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                Toast.makeText(MyNoteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case FETCH_NOTES_SUCCESS:
+                boolean remove=msg.arg1==1?true:false;
+                NotesResultBean bean=(NotesResultBean) msg.obj;
+                if (remove){
+                    adapter.clear();
+                }
+                for (int i=0;i<bean.getList().size();i++){
+                    adapter.add(bean.getList().get(i));
+                }
+                break;
+        }
+    }
+
     private class MyHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             try {
-                switch (msg.what){
-                    case CONNECTION_FAILED:
-                        Toast.makeText(MyNoteActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                        break;
-                    case FETCH_NOTES_SUCCESS:
-                        boolean remove=msg.arg1==1?true:false;
-                        NotesResultBean bean=(NotesResultBean) msg.obj;
-                        if (remove){
-                            adapter.clear();
-                        }
-                        for (int i=0;i<bean.getList().size();i++){
-                            adapter.add(bean.getList().get(i));
-                        }
-                        break;
-                }
+
             }catch (Exception e){}
         }
     }

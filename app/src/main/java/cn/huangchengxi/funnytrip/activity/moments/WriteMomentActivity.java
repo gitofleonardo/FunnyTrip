@@ -33,13 +33,14 @@ import java.util.concurrent.ExecutionException;
 import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.activity.home.MessageActivity;
 import cn.huangchengxi.funnytrip.application.MainApplication;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import cn.huangchengxi.funnytrip.utils.StorageHelper;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class WriteMomentActivity extends AppCompatActivity {
+public class WriteMomentActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private Toolbar toolbar;
     private ImageView back;
     private TextView commit;
@@ -56,7 +57,8 @@ public class WriteMomentActivity extends AppCompatActivity {
     private final int COMMIT_SUCCESS=3;
     private final int NOT_LOGIN=4;
 
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
     private AlertDialog dialog;
 
     @Override
@@ -141,26 +143,32 @@ public class WriteMomentActivity extends AppCompatActivity {
         intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,"image/*");
         startActivityForResult(intent,RC_CHOOSE_PIC);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        if (dialog!=null && dialog.isShowing()){
+            dialog.dismiss();
+        }
+        switch (msg.what){
+            case CONNECTION_FAILED:
+                Toast.makeText(WriteMomentActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+            case COMMIT_FAILED:
+                Toast.makeText(WriteMomentActivity.this, "上传失败", Toast.LENGTH_SHORT).show();
+                break;
+            case COMMIT_SUCCESS:
+                Toast.makeText(WriteMomentActivity.this, "分享成功", Toast.LENGTH_SHORT).show();
+                finish();
+                break;
+            case NOT_LOGIN:
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-            if (dialog!=null && dialog.isShowing()){
-                dialog.dismiss();
-            }
-            switch (msg.what){
-                case CONNECTION_FAILED:
-                    Toast.makeText(WriteMomentActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
-                case COMMIT_FAILED:
-                    Toast.makeText(WriteMomentActivity.this, "上传失败", Toast.LENGTH_SHORT).show();
-                    break;
-                case COMMIT_SUCCESS:
-                    Toast.makeText(WriteMomentActivity.this, "分享成功", Toast.LENGTH_SHORT).show();
-                    finish();
-                    break;
-                case NOT_LOGIN:
-                    break;
-            }
+
         }
     }
     @Override

@@ -22,14 +22,16 @@ import cn.huangchengxi.funnytrip.activity.network.NetworkLoadingFragment;
 import cn.huangchengxi.funnytrip.activity.network.NetworkNotAvailableFragment;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.UserInformationBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 
-public class AccountInfoActivity extends AppCompatActivity implements NetworkNotAvailableFragment.OnFragmentInteractionListener {
+public class AccountInfoActivity extends AppCompatActivity implements NetworkNotAvailableFragment.OnFragmentInteractionListener,AppHandler.OnHandleMessage{
 
     private Toolbar toolbar;
     private ImageView back;
 
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private final int FETCH_MY_INFORMATION_SUCCESS=3;
     private final int FETCH_ERROR=4;
@@ -122,61 +124,68 @@ public class AccountInfoActivity extends AppCompatActivity implements NetworkNot
             }
         });
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        switch (msg.what){
+            case CONNECTION_FAILED:
+            case FETCH_ERROR:
+                if (currentFragment!=null){
+                    getSupportFragmentManager().beginTransaction().remove(currentFragment).commitAllowingStateLoss();
+                }
+
+                NetworkNotAvailableFragment networkNotAvailableFragment=NetworkNotAvailableFragment.newInstance();
+                networkNotAvailableFragment.setOnRefreshListener(new NetworkNotAvailableFragment.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        if(currentFragment!=null){
+                            getSupportFragmentManager().beginTransaction().remove(currentFragment).commitAllowingStateLoss();
+                        }
+                        currentFragment= NetworkLoadingFragment.newInstance();
+                        getSupportFragmentManager().beginTransaction().add(R.id.fragment_layout,currentFragment).commitAllowingStateLoss();
+                        fetchMyInformation();
+                    }
+                });
+                getSupportFragmentManager().beginTransaction().add(R.id.fragment_layout,networkNotAvailableFragment).commitAllowingStateLoss();
+                currentFragment=networkNotAvailableFragment;
+                break;
+            case CHANGE_FAILED:
+                Toast.makeText(AccountInfoActivity.this, "更改失败", Toast.LENGTH_SHORT).show();
+                finish();
+                break;
+            case CHANGE_SUCCESS:
+                Toast.makeText(AccountInfoActivity.this, "更改成功", Toast.LENGTH_SHORT).show();
+                setResult(1);
+                finish();
+                break;
+            case FETCH_MY_INFORMATION_SUCCESS:
+                if (currentFragment!=null){
+                    getSupportFragmentManager().beginTransaction().remove(currentFragment).commitAllowingStateLoss();
+                }
+
+                AccountInfoFragment accountInfoFragment=AccountInfoFragment.newInstance((UserInformationBean) msg.obj);
+                accountInfoFragment.setOnDataChanged(new AccountInfoFragment.OnDataChanged() {
+                    @Override
+                    public void onChange(int newGender, long newBirthday, String newHomeland, String newLocation, String newCareer, String newInterest) {
+                        changed=true;
+                        AccountInfoActivity.this.newGender=newGender;
+                        AccountInfoActivity.this.newBirthday=newBirthday;
+                        AccountInfoActivity.this.newHomeland=newHomeland;
+                        AccountInfoActivity.this.newLocation=newLocation;
+                        AccountInfoActivity.this.newCareer=newCareer;
+                        AccountInfoActivity.this.newInterest=newInterest;
+                    }
+                });
+                currentFragment=accountInfoFragment;
+                getSupportFragmentManager().beginTransaction().add(R.id.fragment_layout,accountInfoFragment).commitAllowingStateLoss();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(@NonNull Message msg) {
-            switch (msg.what){
-                case CONNECTION_FAILED:
-                case FETCH_ERROR:
-                    if (currentFragment!=null){
-                        getSupportFragmentManager().beginTransaction().remove(currentFragment).commitAllowingStateLoss();
-                    }
 
-                    NetworkNotAvailableFragment networkNotAvailableFragment=NetworkNotAvailableFragment.newInstance();
-                    networkNotAvailableFragment.setOnRefreshListener(new NetworkNotAvailableFragment.OnRefreshListener() {
-                        @Override
-                        public void onRefresh() {
-                            if(currentFragment!=null){
-                                getSupportFragmentManager().beginTransaction().remove(currentFragment).commitAllowingStateLoss();
-                            }
-                            currentFragment= NetworkLoadingFragment.newInstance();
-                            getSupportFragmentManager().beginTransaction().add(R.id.fragment_layout,currentFragment).commitAllowingStateLoss();
-                            fetchMyInformation();
-                        }
-                    });
-                    getSupportFragmentManager().beginTransaction().add(R.id.fragment_layout,networkNotAvailableFragment).commitAllowingStateLoss();
-                    currentFragment=networkNotAvailableFragment;
-                    break;
-                case CHANGE_FAILED:
-                    Toast.makeText(AccountInfoActivity.this, "更改失败", Toast.LENGTH_SHORT).show();
-                    finish();
-                    break;
-                case CHANGE_SUCCESS:
-                    Toast.makeText(AccountInfoActivity.this, "更改成功", Toast.LENGTH_SHORT).show();
-                    finish();
-                    break;
-                case FETCH_MY_INFORMATION_SUCCESS:
-                    if (currentFragment!=null){
-                        getSupportFragmentManager().beginTransaction().remove(currentFragment).commitAllowingStateLoss();
-                    }
-
-                    AccountInfoFragment accountInfoFragment=AccountInfoFragment.newInstance((UserInformationBean) msg.obj);
-                    accountInfoFragment.setOnDataChanged(new AccountInfoFragment.OnDataChanged() {
-                        @Override
-                        public void onChange(int newGender, long newBirthday, String newHomeland, String newLocation, String newCareer, String newInterest) {
-                            changed=true;
-                            AccountInfoActivity.this.newGender=newGender;
-                            AccountInfoActivity.this.newBirthday=newBirthday;
-                            AccountInfoActivity.this.newHomeland=newHomeland;
-                            AccountInfoActivity.this.newLocation=newLocation;
-                            AccountInfoActivity.this.newCareer=newCareer;
-                            AccountInfoActivity.this.newInterest=newInterest;
-                        }
-                    });
-                    currentFragment=accountInfoFragment;
-                    getSupportFragmentManager().beginTransaction().add(R.id.fragment_layout,accountInfoFragment).commitAllowingStateLoss();
-                    break;
-            }
         }
     }
 }

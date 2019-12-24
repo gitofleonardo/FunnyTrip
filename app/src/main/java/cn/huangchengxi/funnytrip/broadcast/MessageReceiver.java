@@ -14,6 +14,7 @@ public class MessageReceiver extends BroadcastReceiver {
             boolean isReturn=intent.getBooleanExtra("is_return_message",true);
             if (isReturn){
                 String messageID=intent.getStringExtra("message_id");
+                String toUID=intent.getStringExtra("to_uid");
                 onMessageReceived.onSuccessSent(messageID);
             }else{
                 String content=intent.getStringExtra("content");

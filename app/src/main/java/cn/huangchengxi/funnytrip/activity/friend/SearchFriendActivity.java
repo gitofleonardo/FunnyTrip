@@ -29,13 +29,14 @@ import cn.huangchengxi.funnytrip.R;
 import cn.huangchengxi.funnytrip.adapter.FriendSearchResultAdapter;
 import cn.huangchengxi.funnytrip.application.MainApplication;
 import cn.huangchengxi.funnytrip.databean.SearchResultBean;
+import cn.huangchengxi.funnytrip.handler.AppHandler;
 import cn.huangchengxi.funnytrip.item.FriendSearchResultItem;
 import cn.huangchengxi.funnytrip.utils.HttpHelper;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class SearchFriendActivity extends AppCompatActivity {
+public class SearchFriendActivity extends AppCompatActivity implements AppHandler.OnHandleMessage{
     private Toolbar toolbar;
     private ImageView back;
     private TextView search;
@@ -45,7 +46,8 @@ public class SearchFriendActivity extends AppCompatActivity {
     private List<FriendSearchResultItem> list;
     private FriendSearchResultAdapter adapter;
 
-    private MyHandler myHandler=new MyHandler();
+    //private MyHandler myHandler=new MyHandler();
+    private AppHandler myHandler=new AppHandler(this);
 
     private String currentKeyword;
 
@@ -136,30 +138,36 @@ public class SearchFriendActivity extends AppCompatActivity {
         msg.what=what;
         myHandler.sendMessage(msg);
     }
+
+    @Override
+    public void onHandle(Message msg) {
+        srl.setRefreshing(false);
+        switch (msg.what){
+            case SEARCH_OK:
+                adapter.notifyDataSetChanged();
+
+                if (list.size()==0){
+                    Toast.makeText(SearchFriendActivity.this, "搜索不到任何用户", Toast.LENGTH_SHORT).show();
+                }
+                break;
+            case SEARCH_FAILED:
+                srl.setRefreshing(false);
+                Toast.makeText(SearchFriendActivity.this, "查找失败", Toast.LENGTH_SHORT).show();
+                break;
+            case SEARCH_MORE_SPECIFIC:
+                adapter.notifyDataSetChanged();
+                Toast.makeText(SearchFriendActivity.this, "搜索内容过多，请缩小搜索范围", Toast.LENGTH_SHORT).show();
+                break;
+            case CONNECTION_FAILED:
+                Toast.makeText(SearchFriendActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
+                break;
+        }
+    }
+
     private class MyHandler extends Handler{
         @Override
         public void handleMessage(@NonNull Message msg) {
-            srl.setRefreshing(false);
-            switch (msg.what){
-                case SEARCH_OK:
-                    adapter.notifyDataSetChanged();
 
-                    if (list.size()==0){
-                        Toast.makeText(SearchFriendActivity.this, "搜索不到任何用户", Toast.LENGTH_SHORT).show();
-                    }
-                    break;
-                case SEARCH_FAILED:
-                    srl.setRefreshing(false);
-                    Toast.makeText(SearchFriendActivity.this, "查找失败", Toast.LENGTH_SHORT).show();
-                    break;
-                case SEARCH_MORE_SPECIFIC:
-                    adapter.notifyDataSetChanged();
-                    Toast.makeText(SearchFriendActivity.this, "搜索内容过多，请缩小搜索范围", Toast.LENGTH_SHORT).show();
-                    break;
-                case CONNECTION_FAILED:
-                    Toast.makeText(SearchFriendActivity.this, "网络连接失败，请检查网络连接", Toast.LENGTH_SHORT).show();
-                    break;
-            }
         }
     }
 }

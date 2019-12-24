@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="800dp"
+    android:layout_height="1000dp"
     android:background="@color/grey"
     app:layout_behavior="@string/bottom_sheet_behavior">
     <androidx.appcompat.widget.Toolbar
